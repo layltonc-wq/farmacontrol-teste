@@ -186,7 +186,19 @@ function Auth(props){
   return(
     <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#0A2D6E 0%,#1351B4 55%,#0C7B4A 100%)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:16}}>
       <div style={{textAlign:'center',marginBottom:28}}>
-        <div style={{width:72,height:72,borderRadius:18,background:'rgba(255,255,255,.15)',border:'2px solid rgba(255,255,255,.3)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:30,color:'#fff',fontWeight:900,backdropFilter:'blur(8px)'}}>Rx</div>
+        <div style={{width:72,height:72,borderRadius:18,background:'rgba(255,255,255,.15)',border:'2px solid rgba(255,255,255,.3)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',backdropFilter:'blur(8px)'}}>
+          <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="pharmaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FF6B6B"/>
+                <stop offset="100%" stopColor="#DC2626"/>
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="45" fill="none" stroke="url(#pharmaGrad)" strokeWidth="2.5" opacity="0.8"/>
+            <rect x="42" y="30" width="16" height="40" fill="url(#pharmaGrad)" rx="2"/>
+            <rect x="30" y="42" width="40" height="16" fill="url(#pharmaGrad)" rx="2"/>
+          </svg>
+        </div>
         <div style={{fontSize:28,fontWeight:800,color:'#fff',letterSpacing:'-.02em'}}>FarmaControl</div>
         <div style={{fontSize:13,color:'rgba(255,255,255,.65)',marginTop:4}}>Sistema de Controle Farmaceutico</div>
       </div>
@@ -196,6 +208,7 @@ function Auth(props){
         {mode==='register'&&(<div>
           <Lbl c="Nome completo"/><input value={name} onChange={function(e){setName(e.target.value);}} placeholder="Ex: Ana Silva" className="inp"/>
           <Lbl c="Cargo"/><select value={role} onChange={function(e){setRole(e.target.value);}} className="inp">{Object.keys(ROLES).map(function(k){return <option key={k} value={k}>{ROLE_ICON[k]} {ROLES[k]}</option>;})}</select>
+          <div style={{marginTop:12,marginBottom:12}}><Lbl c="Sua cor de identificação:"/><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:8}}>{['#3B82F6','#10B981','#EF4444','#8B5CF6','#F97316','#06B6D4','#EC4899','#84CC16','#F59E0B','#14B8A6'].map(function(c){return React.createElement('button',{key:c,type:'button',onClick:function(){setColor(c);},style:{width:44,height:44,borderRadius:'50%',background:c,border:color===c?'3px solid #000':'2px solid #ddd',cursor:'pointer',opacity:color===c?1:0.65,transition:'all 0.2s',boxShadow:color===c?'0 0 0 3px '+c+'40':'none',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}},color===c?'✓':'');})}</div></div>
           {role==='farmaceutico'&&(<div><Lbl c="CRF (opcional)"/><input value={crf} onChange={function(e){setCrf(e.target.value);}} placeholder="Ex: 12345-PE" className="inp"/></div>)}
           <Lbl c="Cor de identificacao"/>
           <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
