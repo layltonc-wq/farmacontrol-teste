@@ -670,7 +670,7 @@ function solicitar(){if(!sel){setErr('Selecione um medicamento.');return;}var q=
 return(<Modal onClose={onClose} title="Solicitar Movimentacao"><div className="inf" style={{marginBottom:14}}>Modo convidado — sera revisado pelo Gestor ou Tecnico antes de ser efetivado.</div><div style={{display:'flex',gap:8,marginBottom:14}}><button onClick={function(){setTipo('saida');}} style={{flex:1,padding:'11px',borderRadius:10,border:'1.5px solid '+(tipo==='saida'?'#DC2626':'#E2E8F0'),background:tipo==='saida'?'#FEE2E2':'#fff',color:tipo==='saida'?'#DC2626':'#64748B',cursor:'pointer',fontWeight:600,fontSize:13,transition:'all .15s'}}>💊 Saida</button><button onClick={function(){setTipo('entrada');}} style={{flex:1,padding:'11px',borderRadius:10,border:'1.5px solid '+(tipo==='entrada'?'#0C6B3E':'#E2E8F0'),background:tipo==='entrada'?'#DCFCE7':'#fff',color:tipo==='entrada'?'#0C6B3E':'#64748B',cursor:'pointer',fontWeight:600,fontSize:13,transition:'all .15s'}}>📥 Entrada</button></div><Lbl c="Medicamento"/><input value={search} onChange={function(e){setSearch(e.target.value);setShowList(true);}} onFocus={function(){setShowList(true);}} placeholder="Digite para filtrar..." className="inp"/>{showList&&(<div style={{border:'1.5px solid '+B,borderRadius:10,overflow:'hidden',maxHeight:180,overflowY:'auto',marginBottom:10,boxShadow:'0 4px 12px rgba(0,0,0,.1)'}}>{medList.slice(0,8).map(function(m){return <div key={m.id} onClick={function(){setSel(m);setSearch(m.nome);setShowList(false);}} style={{padding:'11px 14px',borderBottom:'1px solid #F8FAFC',cursor:'pointer',fontWeight:600,color:'#1E293B',fontSize:13,transition:'background .1s'}} onMouseEnter={function(e){e.currentTarget.style.background='#EFF6FF';}} onMouseLeave={function(e){e.currentTarget.style.background='';}}>{m.nome}</div>;}  )}</div>)}{sel&&!showList&&<div style={{background:'#DCFCE7',border:'1.5px solid #86EFAC',borderRadius:10,padding:'10px 14px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontWeight:700,color:'#0C6B3E'}}>{sel.nome}</span><button onClick={function(){setSel(null);setSearch('');}} style={{background:'none',border:'none',cursor:'pointer',color:'#64748B',fontSize:16}}>×</button></div>}<Lbl c="Quantidade"/><input value={qty} onChange={function(e){setQty(e.target.value.replace(/[^0-9]/g,''));}} placeholder="Ex: 10" className="inp" style={{fontSize:20,fontWeight:800,textAlign:'center'}}/><Lbl c="Motivo (opcional)"/><textarea value={obs} onChange={function(e){setObs(e.target.value);}} rows={2} className="inp" style={{resize:'none',lineHeight:1.6}}/>{err&&<div className="er">{err}</div>}{ok&&<div className="ok">{ok}</div>}<button onClick={solicitar} disabled={saving} className="bp" style={{opacity:saving?0.5:1}}>{saving?'Enviando...':'Enviar Solicitacao'}</button></Modal>);}
 
 function SolicitacoesPlantaoModal(props){var list=props.list;var onApprove=props.onApprove;var onDeny=props.onDeny;var onClose=props.onClose;if(!list||list.length===0)return null;return(<div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(15,23,42,.65)',display:'flex',alignItems:'flex-start',justifyContent:'center',zIndex:450,padding:'60px 16px 16px',backdropFilter:'blur(3px)'}}><div style={{background:'#fff',borderRadius:20,maxWidth:420,width:'100%',overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,.2)'}}><div style={{padding:'14px 18px',background:'linear-gradient(135deg,#0A2D6E,#1351B4)',color:'#fff',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontWeight:700,fontSize:14}}>Solicitacoes de entrada ({list.length})</span><button onClick={onClose} style={{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',cursor:'pointer',fontSize:16,width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button></div><div style={{maxHeight:400,overflowY:'auto'}}>{list.map(function(s,i){return(<div key={s.id} style={{padding:'14px 16px',borderBottom:i<list.length-1?'1px solid #F8FAFC':'none'}}><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}><div className="av" style={{width:38,height:38,background:s.deColor||B,fontSize:14}}>{s.deNome?s.deNome.charAt(0):'?'}</div><div><div style={{fontWeight:600,color:'#1E293B',fontSize:14}}>{s.deNome}</div><div style={{fontSize:12,color:'#64748B'}}>{ROLES[s.deCargo]||s.deCargo}</div></div></div><div style={{display:'flex',gap:8}}><button onClick={function(){onDeny(s);}} className="bs" style={{flex:1}}>Recusar</button><button onClick={function(){onApprove(s);}} className="bg" style={{flex:2}}>Aprovar</button></div></div>);})}</div></div></div>);}
-function TabAntibiotico({user,medications}){
+function TabAntibiotico({user,medications,stock}){
   var [tratamentos,setTratamentos]=React.useState([]);
   var [loading,setLoading]=React.useState(true);
   var [showForm,setShowForm]=React.useState(false);
@@ -781,28 +781,29 @@ function TabAntibiotico({user,medications}){
   async function registrarDose(trat){
     var hoje=new Date().toISOString().split('T')[0];
     var hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    // Baixar do estoque real
     var medId=trat.medicamentoId;
     if(medId){
-      var medRef=db.collection('medicamentos').doc(medId);
-      var medDoc=await medRef.get();
-      if(medDoc.exists){
-        var estoqueAtual=medDoc.data().est||0;
-        if(estoqueAtual<qtdDose){alert('⚠️ Estoque insuficiente! Disponível: '+estoqueAtual+' ampola(s).');return;}
-        await medRef.update({est:estoqueAtual-qtdDose});
-        await db.collection('entries').add({
-          tipo:'saida',
-          medicamentoId:medId,
-          medicamentoNome:trat.medicamentoNome||'',
-          quantidade:qtdDose,
-          autorNome:user.name,
-          autorCor:user.color||B,
-          autorId:user.uid,
-          obs:'Tratamento ATB — Paciente: '+trat.pacienteNome,
-          criadoEm:new Date().toISOString()
-        });
-      } else {alert('⚠️ Medicamento não encontrado no estoque.');}
-    } else {alert('⚠️ Medicamento não vinculado. Configure o tratamento.');}
+      var estoqueAtual=stock[medId]||0;
+      if(estoqueAtual<qtdDose){alert('⚠️ Estoque insuficiente! Disponível: '+estoqueAtual+' ampola(s).');return;}
+      // Registrar saída no histórico — o stock é recalculado automaticamente
+      await db.collection('entries').add({
+        tipo:'saida',
+        medicamentoId:medId,
+        medicamentoNome:trat.medicamentoNome||'',
+        quantidade:qtdDose,
+        autorNome:user.name,
+        autorCor:user.color||B,
+        autorId:user.uid,
+        lote:'',
+        validade:'',
+        obs:'Tratamento ATB — Paciente: '+trat.pacienteNome,
+        criadoEm:new Date().toISOString(),
+        date:hoje
+      });
+    } else {
+      alert('⚠️ Medicamento não vinculado. Configure o tratamento.');
+      return;
+    }
     var novaDose={data:hoje,hora:hora,responsavel:user.name,responsavelCor:user.color||B,qtd:qtdDose};
     var novasDoses=[...(trat.doses||[]),novaDose];
     var novoStatus=novasDoses.length>=parseInt(trat.diasTratamento)?'concluido':'ativo';
@@ -927,7 +928,7 @@ function TabAntibiotico({user,medications}){
           <div><label style={{fontSize:12,fontWeight:700,color:'#475569',display:'block',marginBottom:5}}>Medicamento (Estoque) *</label>
             <select value={medSelecionado} onChange={function(e){setMedSelecionado(e.target.value);}} style={{width:'100%',padding:'12px',borderRadius:10,border:'1.5px solid #E2E8F0',fontSize:13,boxSizing:'border-box',background:'#fff'}}>
               <option value="">Selecione o medicamento...</option>
-              {todosMeds.map(function(m){return <option key={m.id} value={m.id}>{m.nome} (Estoque: {m.est||0})</option>;})}
+              {todosMeds.map(function(m){return <option key={m.id} value={m.id}>{m.nome} (Estoque: {stock[m.id]||0})</option>;})}
             </select>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
@@ -1149,7 +1150,7 @@ return(
         {tab==='gestao'&&can(user.role,'gestao')&&<TabGestao currentUser={user} entries={entries}/>}
         {tab==='log'&&can(user.role,'log')&&<TabLog/>}
         {tab==='histcontas'&&can(user.role,'log')&&<TabHistContas/>}
-        {tab==='antibiotico'&&<TabAntibiotico user={user} medications={meds}/>}
+        {tab==='antibiotico'&&<TabAntibiotico user={user} medications={meds} stock={stock}/>}
         {tab==='perfil'&&<TabPerfil user={user} onUpdate={function(u){setUser(u);}} onLogout={logout} entries={entries} medications={meds} stock={stock}/>}
       </div>
     )}
