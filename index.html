@@ -186,30 +186,27 @@ function Auth(props){
   return(
     <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#0A2D6E 0%,#1351B4 55%,#0C7B4A 100%)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:16}}>
       <div style={{textAlign:'center',marginBottom:28}}>
-        <div style={{width:72,height:72,borderRadius:18,background:'rgba(255,255,255,.15)',border:'2px solid rgba(255,255,255,.3)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',backdropFilter:'blur(8px)'}}>
-          <svg width="44" height="44" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" fill="none">
+        <div style={{width:80,height:80,borderRadius:20,background:'rgba(255,255,255,.12)',border:'1.5px solid rgba(255,255,255,.25)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',backdropFilter:'blur(10px)',boxShadow:'0 8px 24px rgba(0,0,0,.2)'}}>
+          <svg width="52" height="52" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                <feDropShadow dx="0" dy="1" stdDeviation="1" floodOpacity="0.3"/>
-              </filter>
+              <linearGradient id="g1" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1"/>
+                <stop offset="100%" stopColor="#E8F0FE" stopOpacity="0.9"/>
+              </linearGradient>
             </defs>
-            {/* Bastão central */}
-            <rect x="47" y="15" width="6" height="85" fill="#FFFFFF" rx="3"/>
-            {/* Taça/base */}
-            <ellipse cx="50" cy="103" rx="12" ry="8" fill="#FFFFFF"/>
-            <path d="M 38 103 Q 38 110 50 112 Q 62 110 62 103" fill="#FFFFFF"/>
-            {/* Asas */}
-            <path d="M 50 20 Q 30 15 20 25" stroke="#FFFFFF" strokeWidth="4" fill="none" strokeLinecap="round"/>
-            <path d="M 50 20 Q 70 15 80 25" stroke="#FFFFFF" strokeWidth="4" fill="none" strokeLinecap="round"/>
-            {/* Cabeça da serpente */}
-            <circle cx="50" cy="22" r="4.5" fill="#FFFFFF"/>
-            {/* Serpente lado esquerdo */}
-            <path d="M 48 26 Q 38 30 35 42 Q 33 52 38 60 Q 43 68 50 70" stroke="#FFFFFF" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-            {/* Serpente lado direito */}
-            <path d="M 52 26 Q 62 30 65 42 Q 67 52 62 60 Q 57 68 50 70" stroke="#FFFFFF" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-            {/* Detalhes das cobras */}
-            <circle cx="35" cy="42" r="2" fill="#FFFFFF"/>
-            <circle cx="65" cy="42" r="2" fill="#FFFFFF"/>
+            <rect x="94" y="30" width="12" height="175" rx="6" fill="url(#g1)"/>
+            <rect x="82" y="198" width="36" height="7" rx="3.5" fill="url(#g1)"/>
+            <rect x="74" y="205" width="52" height="7" rx="3.5" fill="url(#g1)"/>
+            <ellipse cx="100" cy="216" rx="30" ry="6" fill="url(#g1)" opacity="0.85"/>
+            <path d="M 60 95 L 55 75 L 145 75 L 140 95 Q 100 120 60 95 Z" fill="url(#g1)"/>
+            <path d="M 40 68 L 160 68 L 145 76 L 55 76 Z" fill="url(#g1)"/>
+            <path d="M 100 220 C 80 215,68 200,72 185 C 76 170,95 168,100 160 C 105 152,120 148,122 135 C 124 122,112 112,100 108 C 88 104,75 100,74 88 C 73 76,88 70,100 68" stroke="url(#g1)" strokeWidth="14" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M 100 220 C 120 215,132 198,128 182 C 124 166,105 162,100 152 C 95 142,82 136,80 122 C 78 108,90 100,100 98 C 110 96,126 92,127 80 C 128 72,115 66,100 64" stroke="url(#g1)" strokeWidth="14" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            <ellipse cx="100" cy="52" rx="13" ry="18" fill="url(#g1)"/>
+            <ellipse cx="106" cy="46" rx="3" ry="3.5" fill="rgba(19,81,180,0.6)"/>
+            <path d="M 100 68 L 94 76 M 100 68 L 106 76" stroke="rgba(255,100,100,0.9)" strokeWidth="2.5" strokeLinecap="round"/>
+            <path d="M 94 58 C 80 50,55 48,40 55 C 30 60,28 68,35 72 C 45 78,70 70,94 65 Z" fill="url(#g1)" opacity="0.9"/>
+            <path d="M 106 58 C 120 50,145 48,160 55 C 170 60,172 68,165 72 C 155 78,130 70,106 65 Z" fill="url(#g1)" opacity="0.9"/>
           </svg>
         </div>
         <div style={{fontSize:28,fontWeight:800,color:'#fff',letterSpacing:'-.02em'}}>FarmaControl</div>
