@@ -752,7 +752,7 @@ function TabAntibiotico({user,medications,stock}){
   }
 
   async function iniciarEspera(t){setEditNome(t.pacienteNome);setEditDias(String(t.diasTratamento||''));setEditIni(new Date().toISOString().split('T')[0]);setEditObs(t.obs||'');setEditMed(t.nomeMedico||'');setEditCrm(t.crmMedico||'');setShowEdit(Object.assign({},t,{_esp:true}));setShowDet(null);}
-  async function ataqueBtn(t){if(!window.confirm('Marcar como Dose de Ataque? O estoque ja foi baixado no cadastro.'))return;await db.collection('tratamentos_atb').doc(t.id).update({status:'dose_ataque',doseAtaqueEm:new Date().toISOString(),doseAtaqueRegistradoPor:user.name});setShowDet(null);}
+  async function ataqueBtn(t){if(!window.confirm('Marcar como Dose de Ataque? O estoque ja foi baixado no cadastro.'))return;var hj=new Date().toISOString().split('T')[0];var hr=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});await db.collection('tratamentos_atb').doc(t.id).update({status:'dose_ataque',doseAtaqueEm:new Date().toISOString(),doseAtaqueData:hj,doseAtaqueHora:hr,doseAtaqueRegistradoPor:user.name,doseAtaqueCor:user.color||'#8B5CF6'});setShowDet(null);}
   async function regDose(t){
     var hj=new Date().toISOString().split('T')[0];
     var hr=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -842,7 +842,7 @@ function TabAntibiotico({user,medications,stock}){
                   <div style={{fontWeight:700,fontSize:15,color:'#1E293B'}}>{t.pacienteNome}</div>
                   {(t.nomeMedico||t.crmMedico)&&<div style={{fontSize:11,color:'#64748B',marginTop:2}}>👨‍⚕️ {t.nomeMedico}{t.crmMedico?' · CRM: '+t.crmMedico:''}</div>}
                   {s==='espera'&&<div style={{fontSize:11,fontWeight:600,marginTop:2,color:de>=3?'#DC2626':de>=2?'#D97706':'#D97706'}}>{de>=3?'🚨 '+de+' dias - PRAZO VENCIDO!':'⏳ Dia '+de+' de 3 em espera'}</div>}
-                  {s==='dose_ataque'&&<div style={{fontSize:11,fontWeight:600,marginTop:2,color:'#7C3AED'}}>⚡ Dose unica liberada</div>}
+                  {s==='dose_ataque'&&<div style={{fontSize:11,fontWeight:600,marginTop:2,color:'#7C3AED'}}>⚡ {t.doseAtaqueRegistradoPor||'—'} · {t.doseAtaqueData?fD(t.doseAtaqueData):''}{t.doseAtaqueHora?' as '+t.doseAtaqueHora:''}</div>}
                   {s!=='espera'&&s!=='dose_ataque'&&total>0&&<div style={{fontSize:11,color:'#94A3B8',marginTop:2}}>Inicio: {fD(t.dataInicio)} · {total} dias</div>}
                 </div>
                 <span style={{background:cCor(s)+'18',color:cCor(s),fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,border:'1px solid '+cCor(s)+'40'}}>{cIco(s)} {cLbl(s)}</span>
@@ -1009,6 +1009,23 @@ function TabAntibiotico({user,medications,stock}){
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               <button onClick={function(){iniciarEspera(showDet);}} style={{padding:'12px',background:'#F0FDF4',border:'1.5px solid #BBF7D0',borderRadius:12,color:'#059669',fontWeight:700,fontSize:13,cursor:'pointer'}}>💉 Iniciar</button>
               <button onClick={function(){ataqueBtn(showDet);}} style={{padding:'12px',background:'#F5F3FF',border:'1.5px solid #DDD6FE',borderRadius:12,color:'#7C3AED',fontWeight:700,fontSize:13,cursor:'pointer'}}>⚡ Dose Ataque</button>
+            </div>
+          </div>}
+          {cSt(showDet)==='dose_ataque'&&<div style={{background:'#F5F3FF',borderRadius:14,padding:16,marginBottom:16,border:'1.5px solid #DDD6FE'}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#6D28D9',marginBottom:10}}>⚡ Dose de Ataque Registrada</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <div style={{background:'#fff',borderRadius:10,padding:'10px 12px',border:'1px solid #EDE9FE'}}>
+                <div style={{fontSize:10,color:'#94A3B8',marginBottom:3,textTransform:'uppercase',letterSpacing:.5}}>Funcionario</div>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:showDet.doseAtaqueCor||'#8B5CF6',flexShrink:0}}/>
+                  <div style={{fontWeight:700,fontSize:13,color:'#1E293B'}}>{showDet.doseAtaqueRegistradoPor||'—'}</div>
+                </div>
+              </div>
+              <div style={{background:'#fff',borderRadius:10,padding:'10px 12px',border:'1px solid #EDE9FE'}}>
+                <div style={{fontSize:10,color:'#94A3B8',marginBottom:3,textTransform:'uppercase',letterSpacing:.5}}>Data e Hora</div>
+                <div style={{fontWeight:700,fontSize:13,color:'#1E293B'}}>{showDet.doseAtaqueData?fD(showDet.doseAtaqueData):'—'}</div>
+                <div style={{fontSize:11,color:'#7C3AED',fontWeight:600}}>{showDet.doseAtaqueHora||''}</div>
+              </div>
             </div>
           </div>}
           {(showDet.doses||[]).length>0&&<div style={{marginBottom:16}}>
