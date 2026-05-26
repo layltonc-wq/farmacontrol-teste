@@ -925,7 +925,7 @@ function TabNotas({user,medications}){
         <div style={{background:'linear-gradient(135deg,#0F766E,#1351B4)',padding:'20px 16px 20px',borderRadius:'0 0 24px 24px',marginBottom:16}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
             <div>
-              <div style={{color:'rgba(255,255,255,.7)',fontSize:11,textTransform:'uppercase',letterSpacing:1}}>Conferencia {preview.tipo==='pdf'?'PDF':'XML'}</div>
+              <div style={{color:'rgba(255,255,255,.7)',fontSize:11,textTransform:'uppercase',letterSpacing:1}}>Conferencia {preview.tipo==='pdf'?'PDF':preview.tipo==='foto'?'FOTO (OCR)':'XML'}</div>
               <div style={{color:'#fff',fontSize:18,fontWeight:700,marginTop:2}}>NF-e {preview.nNF}</div>
               <div style={{color:'rgba(255,255,255,.8)',fontSize:12,marginTop:2}}>{preview.fornecedorNome}</div>
             </div>
@@ -962,7 +962,13 @@ function TabNotas({user,medications}){
               <div style={{fontSize:13,fontWeight:700,color:'#92400E',marginBottom:6}}>{preview.tipo==='foto'?'📸 OCR nao identificou itens automaticamente':'PDF: itens nao identificados'}</div>
               <div style={{fontSize:12,color:'#92400E',marginBottom:10}}>Adicione os itens manualmente usando o botao abaixo. Os dados do cabecalho foram preenchidos — confira e corrija se necessario.</div>
               <button onClick={function(){setItemsEdit([{idx:0,xProd:'',cProd:'',qCom:1,uCom:'UN',vUnCom:0,vProd:0,lote:'',dFab:'',dVal:'',incluir:true,tipo:'manual',medId:'',medCasado:null,confirmado:false,confianca:0}]);}} style={{width:'100%',padding:'10px',background:'#F59E0B',border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer'}}>+ Adicionar item manualmente</button>
-              {preview.textoOCR&&<details style={{marginTop:10}}><summary style={{fontSize:11,color:'#92400E',cursor:'pointer',fontWeight:600}}>Ver texto extraido pelo OCR</summary><pre style={{fontSize:9,color:'#475569',marginTop:6,background:'#fff',padding:8,borderRadius:6,maxHeight:150,overflow:'auto',whiteSpace:'pre-wrap',wordBreak:'break-all'}}>{preview.textoOCR}</pre></details>}
+              {preview.textoOCR
+                ?<div style={{marginTop:10}}>
+                  <div style={{fontSize:11,color:'#92400E',fontWeight:700,marginBottom:4}}>Texto lido pelo OCR (verifique abaixo):</div>
+                  <pre style={{fontSize:10,color:'#475569',background:'#fff',padding:10,borderRadius:8,maxHeight:200,overflow:'auto',whiteSpace:'pre-wrap',wordBreak:'break-all',border:'1px solid #FCD34D',lineHeight:1.6}}>{preview.textoOCR}</pre>
+                </div>
+                :<div style={{marginTop:8,background:'#FEE2E2',borderRadius:8,padding:'8px 10px',fontSize:11,color:'#DC2626',fontWeight:600}}>OCR nao extraiu texto — tente com uma foto mais nitida ou com maior resolucao.</div>
+              }
             </div>}
           </div>
           <div style={{background:'#fff',borderRadius:16,padding:16,boxShadow:'0 2px 12px rgba(0,0,0,.06)'}}>
