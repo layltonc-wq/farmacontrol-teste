@@ -9,7 +9,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
 <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 <style>
 :root{
@@ -670,6 +671,464 @@ function solicitar(){if(!sel){setErr('Selecione um medicamento.');return;}var q=
 return(<Modal onClose={onClose} title="Solicitar Movimentacao"><div className="inf" style={{marginBottom:14}}>Modo convidado — sera revisado pelo Gestor ou Tecnico antes de ser efetivado.</div><div style={{display:'flex',gap:8,marginBottom:14}}><button onClick={function(){setTipo('saida');}} style={{flex:1,padding:'11px',borderRadius:10,border:'1.5px solid '+(tipo==='saida'?'#DC2626':'#E2E8F0'),background:tipo==='saida'?'#FEE2E2':'#fff',color:tipo==='saida'?'#DC2626':'#64748B',cursor:'pointer',fontWeight:600,fontSize:13,transition:'all .15s'}}>💊 Saida</button><button onClick={function(){setTipo('entrada');}} style={{flex:1,padding:'11px',borderRadius:10,border:'1.5px solid '+(tipo==='entrada'?'#0C6B3E':'#E2E8F0'),background:tipo==='entrada'?'#DCFCE7':'#fff',color:tipo==='entrada'?'#0C6B3E':'#64748B',cursor:'pointer',fontWeight:600,fontSize:13,transition:'all .15s'}}>📥 Entrada</button></div><Lbl c="Medicamento"/><input value={search} onChange={function(e){setSearch(e.target.value);setShowList(true);}} onFocus={function(){setShowList(true);}} placeholder="Digite para filtrar..." className="inp"/>{showList&&(<div style={{border:'1.5px solid '+B,borderRadius:10,overflow:'hidden',maxHeight:180,overflowY:'auto',marginBottom:10,boxShadow:'0 4px 12px rgba(0,0,0,.1)'}}>{medList.slice(0,8).map(function(m){return <div key={m.id} onClick={function(){setSel(m);setSearch(m.nome);setShowList(false);}} style={{padding:'11px 14px',borderBottom:'1px solid #F8FAFC',cursor:'pointer',fontWeight:600,color:'#1E293B',fontSize:13,transition:'background .1s'}} onMouseEnter={function(e){e.currentTarget.style.background='#EFF6FF';}} onMouseLeave={function(e){e.currentTarget.style.background='';}}>{m.nome}</div>;}  )}</div>)}{sel&&!showList&&<div style={{background:'#DCFCE7',border:'1.5px solid #86EFAC',borderRadius:10,padding:'10px 14px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontWeight:700,color:'#0C6B3E'}}>{sel.nome}</span><button onClick={function(){setSel(null);setSearch('');}} style={{background:'none',border:'none',cursor:'pointer',color:'#64748B',fontSize:16}}>×</button></div>}<Lbl c="Quantidade"/><input value={qty} onChange={function(e){setQty(e.target.value.replace(/[^0-9]/g,''));}} placeholder="Ex: 10" className="inp" style={{fontSize:20,fontWeight:800,textAlign:'center'}}/><Lbl c="Motivo (opcional)"/><textarea value={obs} onChange={function(e){setObs(e.target.value);}} rows={2} className="inp" style={{resize:'none',lineHeight:1.6}}/>{err&&<div className="er">{err}</div>}{ok&&<div className="ok">{ok}</div>}<button onClick={solicitar} disabled={saving} className="bp" style={{opacity:saving?0.5:1}}>{saving?'Enviando...':'Enviar Solicitacao'}</button></Modal>);}
 
 function SolicitacoesPlantaoModal(props){var list=props.list;var onApprove=props.onApprove;var onDeny=props.onDeny;var onClose=props.onClose;if(!list||list.length===0)return null;return(<div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(15,23,42,.65)',display:'flex',alignItems:'flex-start',justifyContent:'center',zIndex:450,padding:'60px 16px 16px',backdropFilter:'blur(3px)'}}><div style={{background:'#fff',borderRadius:20,maxWidth:420,width:'100%',overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,.2)'}}><div style={{padding:'14px 18px',background:'linear-gradient(135deg,#0A2D6E,#1351B4)',color:'#fff',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontWeight:700,fontSize:14}}>Solicitacoes de entrada ({list.length})</span><button onClick={onClose} style={{background:'rgba(255,255,255,.15)',border:'none',color:'#fff',cursor:'pointer',fontSize:16,width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button></div><div style={{maxHeight:400,overflowY:'auto'}}>{list.map(function(s,i){return(<div key={s.id} style={{padding:'14px 16px',borderBottom:i<list.length-1?'1px solid #F8FAFC':'none'}}><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}><div className="av" style={{width:38,height:38,background:s.deColor||B,fontSize:14}}>{s.deNome?s.deNome.charAt(0):'?'}</div><div><div style={{fontWeight:600,color:'#1E293B',fontSize:14}}>{s.deNome}</div><div style={{fontSize:12,color:'#64748B'}}>{ROLES[s.deCargo]||s.deCargo}</div></div></div><div style={{display:'flex',gap:8}}><button onClick={function(){onDeny(s);}} className="bs" style={{flex:1}}>Recusar</button><button onClick={function(){onApprove(s);}} className="bg" style={{flex:2}}>Aprovar</button></div></div>);})}</div></div></div>);}
+function TabNotas({user,medications}){
+  var sl=React.useState,ef=React.useEffect,B='#1351B4';
+  var _no=sl([]);var notas=_no[0];var setNotas=_no[1];
+  var _ld=sl(false);var loading=_ld[0];var setLoading=_ld[1];
+  var _pv=sl(null);var preview=_pv[0];var setPreview=_pv[1];
+  var _co=sl(false);var confirmando=_co[0];var setConfirmando=_co[1];
+  var _er=sl('');var erro=_er[0];var setErro=_er[1];
+  var _ie=sl([]);var itemsEdit=_ie[0];var setItemsEdit=_ie[1];
+  var _dt=sl(null);var detNota=_dt[0];var setDetNota=_dt[1];
+  var _vi=sl({});var vinculos=_vi[0];var setVinculos=_vi[1];
+  var _fb=sl('');var filtroBusca=_fb[0];var setFiltroBusca=_fb[1];
+  var _ff=sl('');var filtroForns=_ff[0];var setFiltroForns=_ff[1];
+  var _fd=sl('');var filtroDataDe=_fd[0];var setFiltroDataDe=_fd[1];
+  var _fa=sl('');var filtroDataAte=_fa[0];var setFiltroDataAte=_fa[1];
+
+  ef(function(){
+    var u=db.collection('notas_fiscais').orderBy('criadoEm','desc').onSnapshot(function(sn){
+      setNotas(sn.docs.map(function(d){return Object.assign({id:d.id},d.data());}));
+    });return u;
+  },[]);
+
+  ef(function(){
+    var u=db.collection('vinculos_nfe').onSnapshot(function(sn){
+      var v={};sn.docs.forEach(function(d){var dat=d.data();if(dat.chaveNota)v[dat.chaveNota]={medId:dat.medId,medNome:dat.medNome};});setVinculos(v);
+    });return u;
+  },[]);
+
+  function normalizar(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/dissodic[ao]|sodic[ao]|cloridrat[ao]|fosfat[ao]|acetato|sulfato|nitrato|monoidratad[ao]/g,'').replace(/\b(inj|amp|cp|cpr|comp|sol|susp|caps|sach|fr|mg|mcg|ml|ui|un|cx|bl|fco|vd)\b/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+  function gerarChave(nome){var n=normalizar(nome);var ws=n.split(' ').filter(function(w){return w.length>=4;});return ws.slice(0,2).join('_')||n.substring(0,10);}
+  function calcConf(nNota,nCad){var n1=normalizar(nNota);var n2=normalizar(nCad);if(!n1||!n2)return 0;if(n1===n2)return 100;if(n1.includes(n2)||n2.includes(n1))return 92;var w1=n1.split(' ').filter(function(w){return w.length>3;});var w2=n2.split(' ').filter(function(w){return w.length>3;});if(!w1.length||!w2.length)return 0;if(w1[0]===w2[0]&&w1[0].length>=5)return 78;var ov=w1.filter(function(w){return w2.includes(w);}).length;return Math.round((ov/Math.max(w1.length,w2.length))*100);}
+
+  function aplicarVinculos(itens){
+    return itens.map(function(it){
+      var chave=gerarChave(it.xProd);var vinc=vinculos[chave];
+      if(vinc&&vinc.medId){var med=(medications||[]).find(function(m){return m.id===vinc.medId;});if(med)return Object.assign({},it,{medId:med.id,medCasado:med,confianca:100,confirmado:true,daMemoria:true});}
+      var melhorMed=null;var melhorConf=0;
+      (medications||[]).forEach(function(m){var c=calcConf(it.xProd,m.nome||'');if(c>melhorConf){melhorConf=c;melhorMed=m;}});
+      return Object.assign({},it,{medId:melhorConf>=50&&melhorMed?melhorMed.id:'',medCasado:melhorConf>=50?melhorMed:null,confianca:melhorConf,confirmado:melhorConf>=85});
+    });
+  }
+
+  async function salvarVinculo(nomeNota,medId,medNome){
+    var chave=gerarChave(nomeNota);if(!chave||!medId)return;
+    var sn=await db.collection('vinculos_nfe').where('chaveNota','==',chave).get();
+    if(sn.empty){await db.collection('vinculos_nfe').add({chaveNota:chave,nomeOriginal:nomeNota,medId:medId,medNome:medNome,confirmadoPor:user.name,criadoEm:new Date().toISOString()});}
+    else{await db.collection('vinculos_nfe').doc(sn.docs[0].id).update({medId:medId,medNome:medNome,confirmadoPor:user.name,atualizadoEm:new Date().toISOString()});}
+  }
+
+  function lerXML(e){
+    var file=e.target.files&&e.target.files[0];
+    if(!file)return;
+    if(!file.name.toLowerCase().endsWith('.xml')){setErro('Selecione um arquivo .xml da NF-e!');return;}
+    setErro('');setLoading(true);
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var parser=new DOMParser();var xml=parser.parseFromString(ev.target.result,'text/xml');
+        if(xml.querySelector('parsererror')){setErro('XML invalido ou corrompido.');setLoading(false);return;}
+        var get=function(sel){var el=xml.querySelector(sel);return el?el.textContent.trim():''};
+        var nNF=get('nNF');var dhEmi=get('dhEmi')||get('dEmi');var dataEmissao=dhEmi?dhEmi.substring(0,10):'';
+        var fornecedorNome=get('emit xNome');var fornecedorCNPJ=get('emit CNPJ');
+        var infNFe=xml.querySelector('infNFe');var chaveAcesso=infNFe?(infNFe.getAttribute('Id')||'').replace(/^NFe/,''):'';
+        var vTotal=get('vNF')||get('vProd');
+        var itens=[];
+        xml.querySelectorAll('det').forEach(function(det){
+          var xProd=det.querySelector('xProd')?det.querySelector('xProd').textContent.trim():'';
+          var qCom=det.querySelector('qCom')?parseFloat(det.querySelector('qCom').textContent):0;
+          var uCom=det.querySelector('uCom')?det.querySelector('uCom').textContent.trim():'UN';
+          var vUnCom=det.querySelector('vUnCom')?parseFloat(det.querySelector('vUnCom').textContent):0;
+          var vProd=det.querySelector('vProd')?parseFloat(det.querySelector('vProd').textContent):0;
+          var cProd=det.querySelector('cProd')?det.querySelector('cProd').textContent.trim():'';
+          var rastro=det.querySelector('rastro');
+          var lote=rastro&&rastro.querySelector('nLote')?rastro.querySelector('nLote').textContent.trim():'';
+          var dFab=rastro&&rastro.querySelector('dFab')?rastro.querySelector('dFab').textContent.trim():'';
+          var dVal=rastro&&rastro.querySelector('dVal')?rastro.querySelector('dVal').textContent.trim():'';
+          itens.push({xProd:xProd,cProd:cProd,qCom:qCom,uCom:uCom,vUnCom:vUnCom,vProd:vProd,lote:lote,dFab:dFab,dVal:dVal,incluir:true,tipo:'xml'});
+        });
+        var com=aplicarVinculos(itens);
+        setPreview({nNF:nNF,dataEmissao:dataEmissao,fornecedorNome:fornecedorNome,fornecedorCNPJ:fornecedorCNPJ,chaveAcesso:chaveAcesso,vTotal:vTotal,nomeArquivo:file.name,tipo:'xml'});
+        setItemsEdit(com.map(function(it,i){return Object.assign({},it,{idx:i});}));
+        setLoading(false);
+      }catch(ex){setErro('Erro ao processar XML: '+ex.message);setLoading(false);}
+    };
+    reader.readAsText(file,'UTF-8');e.target.value='';
+  }
+
+  async function lerPDF(e){
+    var file=e.target.files&&e.target.files[0];
+    if(!file)return;
+    if(!file.name.toLowerCase().endsWith('.pdf')){setErro('Selecione um arquivo .pdf!');return;}
+    setErro('');setLoading(true);
+    var pdfLib=window.pdfjsLib;
+    if(!pdfLib){setErro('Biblioteca PDF nao carregada.');setLoading(false);return;}
+    pdfLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    try{
+      var buf=await file.arrayBuffer();
+      var pdf=await pdfLib.getDocument({data:buf}).promise;
+      var texto='';
+      for(var pg=1;pg<=pdf.numPages;pg++){
+        var page=await pdf.getPage(pg);var tc=await page.getTextContent();
+        texto+=tc.items.map(function(i){return i.str;}).join(' ')+'\n';
+      }
+      parsearPDF(texto,file.name);
+    }catch(ex){setErro('Erro ao ler PDF: '+ex.message);}
+    setLoading(false);e.target.value='';
+  }
+
+  function parsearPDF(texto,filename){
+    var nNFm=texto.match(/N[uU][mM][eE][rR][oO]\s*:?\s*(\d{1,9})/)||texto.match(/N[oO]\s*\.?\s*(\d{6,9})/)||texto.match(/NF-?e?\s+(\d{6,9})/i);
+    var nNF=nNFm?nNFm[1]:'(verificar)';
+    var dtm=texto.match(/emiss[ao]o[:\s]*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i)||texto.match(/(\d{2}\/\d{2}\/\d{4})/);
+    var dataEmissao='';
+    if(dtm){var pts=dtm[1].split(/[\/\-]/);dataEmissao=pts[2]+'-'+pts[1]+'-'+pts[0];}
+    var cnpjs=texto.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/g)||[];
+    var fornecedorCNPJ=cnpjs[0]||'';
+    var vtm=texto.match(/VALOR TOTAL[^0-9]*(\d[\d.,]+)/i)||texto.match(/TOTAL GERAL[^0-9]*(\d[\d.,]+)/i);
+    var vTotal=vtm?vtm[1].replace(/\./g,'').replace(',','.').trim():'0';
+    var itens=[];
+    texto.split('\n').forEach(function(linha){
+      var l=linha.trim();
+      var m=l.match(/^(.{5,60}?)\s+(\d+(?:[.,]\d+)?)\s+(?:UN|AMP|FR|CX|CP|ML|KG|VD)\s/i);
+      if(m){
+        var desc=m[1].trim();var qtd=parseFloat(m[2].replace(',','.'));
+        if(desc.length>4&&qtd>0&&qtd<100000)itens.push({xProd:desc.toUpperCase(),cProd:'',qCom:qtd,uCom:'UN',vUnCom:0,vProd:0,lote:'',dFab:'',dVal:'',incluir:true,tipo:'pdf',doPDF:true});
+      }
+    });
+    var com=aplicarVinculos(itens);
+    setPreview({nNF:nNF,dataEmissao:dataEmissao,fornecedorNome:'(Verificar na DANFE)',fornecedorCNPJ:fornecedorCNPJ,chaveAcesso:'',vTotal:vTotal,nomeArquivo:filename,tipo:'pdf',textoRaw:texto.substring(0,2000)});
+    setItemsEdit(com.map(function(it,i){return Object.assign({},it,{idx:i});}));
+  }
+
+  async function confirmarEntrada(){
+    if(!preview)return;setConfirmando(true);
+    var hj=new Date().toISOString().split('T')[0];var itensSalvos=[];
+    for(var i=0;i<itemsEdit.length;i++){
+      var it=itemsEdit[i];if(!it.incluir||!it.medId)continue;
+      await db.collection('entries').add({tipo:'entrada',medicamentoId:it.medId,medicamentoNome:it.xProd,quantidade:Math.round(it.qCom),autorNome:user.name,autorCor:user.color||B,autorId:user.uid,lote:it.lote||'',validade:it.dVal||'',obs:'NF-e '+preview.nNF+' - '+preview.fornecedorNome,criadoEm:new Date().toISOString(),date:preview.dataEmissao||hj,vUnCom:it.vUnCom||0,nfNumero:preview.nNF});
+      await salvarVinculo(it.xProd,it.medId,it.medCasado?it.medCasado.nome:'');
+      itensSalvos.push({nome:it.xProd,qtd:Math.round(it.qCom),lote:it.lote||''});
+    }
+    await db.collection('notas_fiscais').add({nNF:preview.nNF,dataEmissao:preview.dataEmissao,fornecedorNome:preview.fornecedorNome,fornecedorCNPJ:preview.fornecedorCNPJ,chaveAcesso:preview.chaveAcesso,vTotal:preview.vTotal,itensSalvos:itensSalvos,importadoPor:user.name,importadoCor:user.color||B,criadoEm:new Date().toISOString(),nomeArquivo:preview.nomeArquivo,tipo:preview.tipo||'xml'});
+    setConfirmando(false);setPreview(null);setItemsEdit([]);
+    alert('NF-e '+preview.nNF+' importada! '+itensSalvos.length+' item(ns) adicionado(s) ao estoque.');
+  }
+
+  async function confirmarVinculo(idx){
+    var it=itemsEdit.find(function(i){return i.idx===idx;});
+    if(it)await salvarVinculo(it.xProd,it.medId,it.medCasado?it.medCasado.nome:'');
+    setItemsEdit(function(prev){return prev.map(function(i){return i.idx===idx?Object.assign({},i,{confirmado:true}):i;});});
+  }
+  function trocarVinculo(idx){setItemsEdit(function(prev){return prev.map(function(i){return i.idx===idx?Object.assign({},i,{confirmado:false,medId:'',medCasado:null,confianca:0,daMemoria:false}):i;});});}
+  function toggleItem(idx){setItemsEdit(function(prev){return prev.map(function(i){return i.idx===idx?Object.assign({},i,{incluir:!i.incluir}):i;});});}
+  function setMedItem(idx,medId){var med=(medications||[]).find(function(m){return m.id===medId;})||null;setItemsEdit(function(prev){return prev.map(function(i){return i.idx===idx?Object.assign({},i,{medId:medId,medCasado:med,confirmado:!!medId}):i;});});}
+  function setQtdItem(idx,v){setItemsEdit(function(prev){return prev.map(function(i){return i.idx===idx?Object.assign({},i,{qCom:parseFloat(v)||0}):i;});});}
+  function setLoteItem(idx,v){setItemsEdit(function(prev){return prev.map(function(i){return i.idx===idx?Object.assign({},i,{lote:v}):i;});});}
+  function setValItem(idx,v){setItemsEdit(function(prev){return prev.map(function(i){return i.idx===idx?Object.assign({},i,{dVal:v}):i;});});}
+
+  function fD(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+  function fDxml(d){if(!d||d.length<8)return'';return d.substring(6,8)+'/'+d.substring(4,6)+'/'+d.substring(0,4);}
+  function fMoeda(v){return'R$ '+parseFloat(v||0).toFixed(2).replace('.',',');}
+
+  var totalConf=itemsEdit.filter(function(i){return i.incluir&&i.medId&&i.confirmado;}).length;
+  var totalAguard=itemsEdit.filter(function(i){return i.incluir&&i.medId&&!i.confirmado;}).length;
+  var totalSemV=itemsEdit.filter(function(i){return i.incluir&&!i.medId;}).length;
+  var uniqueForns=[];notas.forEach(function(n){if(n.fornecedorNome&&uniqueForns.indexOf(n.fornecedorNome)===-1)uniqueForns.push(n.fornecedorNome);});
+  var notasFiltradas=notas.filter(function(n){
+    var okB=!filtroBusca||(n.nNF||'').includes(filtroBusca)||(n.fornecedorNome||'').toLowerCase().includes(filtroBusca.toLowerCase());
+    var okF=!filtroForns||n.fornecedorNome===filtroForns;
+    var okDe=!filtroDataDe||n.dataEmissao>=filtroDataDe;
+    var okAt=!filtroDataAte||n.dataEmissao<=filtroDataAte;
+    return okB&&okF&&okDe&&okAt;
+  });
+
+  if(preview){
+    return (
+      <div style={{padding:'0 0 100px'}}>
+        <div style={{background:'linear-gradient(135deg,#0F766E,#1351B4)',padding:'20px 16px 20px',borderRadius:'0 0 24px 24px',marginBottom:16}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+            <div>
+              <div style={{color:'rgba(255,255,255,.7)',fontSize:11,textTransform:'uppercase',letterSpacing:1}}>Conferencia {preview.tipo==='pdf'?'PDF':'XML'}</div>
+              <div style={{color:'#fff',fontSize:18,fontWeight:700,marginTop:2}}>NF-e {preview.nNF}</div>
+              <div style={{color:'rgba(255,255,255,.8)',fontSize:12,marginTop:2}}>{preview.fornecedorNome}</div>
+            </div>
+            <button onClick={function(){setPreview(null);setItemsEdit([]);}} style={{background:'rgba(255,255,255,.2)',border:'1.5px solid rgba(255,255,255,.4)',borderRadius:10,padding:'8px 12px',color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer'}}>Cancelar</button>
+          </div>
+        </div>
+        <div style={{padding:'0 16px',display:'flex',flexDirection:'column',gap:12}}>
+          <div style={{background:'#fff',borderRadius:16,padding:16,boxShadow:'0 2px 12px rgba(0,0,0,.06)'}}>
+            <div style={{fontWeight:700,fontSize:14,color:'#1E293B',marginBottom:10}}>Dados da Nota</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <div style={{background:'#F8FAFC',borderRadius:10,padding:'10px 12px'}}>
+                <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>Numero</div>
+                <div style={{fontWeight:700,fontSize:14,color:'#1E293B'}}>NF {preview.nNF}</div>
+              </div>
+              <div style={{background:'#F8FAFC',borderRadius:10,padding:'10px 12px'}}>
+                <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>Emissao</div>
+                <div style={{fontWeight:700,fontSize:14,color:'#1E293B'}}>{fD(preview.dataEmissao)||'—'}</div>
+              </div>
+              <div style={{background:'#F8FAFC',borderRadius:10,padding:'10px 12px',gridColumn:'1/-1'}}>
+                <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>Fornecedor</div>
+                <div style={{fontWeight:700,fontSize:13,color:'#1E293B'}}>{preview.fornecedorNome}</div>
+                {preview.fornecedorCNPJ&&<div style={{fontSize:11,color:'#64748B'}}>CNPJ: {preview.fornecedorCNPJ}</div>}
+              </div>
+              <div style={{background:'#EFF6FF',borderRadius:10,padding:'10px 12px',gridColumn:'1/-1'}}>
+                <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>Valor Total</div>
+                <div style={{fontWeight:800,fontSize:18,color:B}}>{fMoeda(preview.vTotal)}</div>
+              </div>
+            </div>
+            {preview.chaveAcesso&&<div style={{marginTop:8,background:'#F8FAFC',borderRadius:10,padding:'8px 12px'}}>
+              <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>Chave de Acesso</div>
+              <div style={{fontSize:10,color:'#475569',wordBreak:'break-all',fontFamily:'monospace'}}>{preview.chaveAcesso}</div>
+            </div>}
+            {preview.tipo==='pdf'&&itemsEdit.length===0&&<div style={{marginTop:10,background:'#FEF3C7',borderRadius:10,padding:'10px 12px',border:'1px solid #FCD34D'}}>
+              <div style={{fontSize:12,fontWeight:700,color:'#92400E',marginBottom:3}}>PDF: itens nao identificados automaticamente</div>
+              <div style={{fontSize:11,color:'#92400E'}}>Os dados do cabecalho foram preenchidos. Confira e edite os itens manualmente consultando a DANFE impressa.</div>
+            </div>}
+          </div>
+          <div style={{background:'#fff',borderRadius:16,padding:16,boxShadow:'0 2px 12px rgba(0,0,0,.06)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <div style={{fontWeight:700,fontSize:14,color:'#1E293B'}}>Itens ({itemsEdit.length})</div>
+              <div style={{display:'flex',gap:5}}>
+                {totalConf>0&&<span style={{background:'#D1FAE5',color:'#059669',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:20}}>{totalConf} OK</span>}
+                {totalAguard>0&&<span style={{background:'#FEF9C3',color:'#713F12',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:20}}>{totalAguard} ?</span>}
+                {totalSemV>0&&<span style={{background:'#FEE2E2',color:'#DC2626',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:20}}>{totalSemV} !!</span>}
+              </div>
+            </div>
+            {(totalAguard>0||totalSemV>0)&&<div style={{background:'#FEF9C3',borderRadius:10,padding:'9px 12px',marginBottom:10,border:'1px solid #FDE047',fontSize:12,color:'#713F12',fontWeight:600}}>
+              {totalAguard>0&&'🤔 '+totalAguard+' item(ns) aguardando confirmacao. '}{totalSemV>0&&'⚠️ '+totalSemV+' sem vinculo (serao ignorados).'}
+            </div>}
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {itemsEdit.map(function(it){
+                var skip=!it.incluir;
+                var bord=skip?'1.5px solid #E2E8F0':it.confirmado&&it.medId?'1.5px solid #BBF7D0':!it.confirmado&&it.medId?'2px solid #FCD34D':'1.5px solid #FECACA';
+                var bg=skip?'#F8FAFC':it.confirmado&&it.medId?'#F0FDF4':!it.confirmado&&it.medId?'#FFFBEB':'#FFF5F5';
+                return (
+                  <div key={it.idx} style={{borderRadius:13,border:bord,background:bg,padding:13}}>
+                    <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+                      <input type='checkbox' checked={it.incluir} onChange={function(){toggleItem(it.idx);}} style={{marginTop:4,width:16,height:16,cursor:'pointer'}}/>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:700,fontSize:13,color:skip?'#94A3B8':'#1E293B',textDecoration:skip?'line-through':'none'}}>{it.xProd}</div>
+                        <div style={{fontSize:11,color:'#64748B',marginTop:2}}>Qtd: <strong>{it.qCom} {it.uCom}</strong>{it.lote?' · Lote: '+it.lote:''}{it.dVal?' · Val: '+fDxml(it.dVal):''}</div>
+                        <div style={{fontSize:11,color:'#94A3B8'}}>{fMoeda(it.vUnCom)}/un · Total: {fMoeda(it.vProd)}</div>
+                        {it.incluir&&it.daMemoria&&it.confirmado&&it.medId&&<div style={{marginTop:8,background:'#D1FAE5',borderRadius:8,padding:'7px 10px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                          <div>
+                            <div style={{fontSize:10,color:'#065F46',fontWeight:700,textTransform:'uppercase'}}>🧠 Da memoria</div>
+                            <div style={{fontSize:12,color:'#059669',fontWeight:700,marginTop:1}}>{it.medCasado&&it.medCasado.nome}</div>
+                          </div>
+                          <button onClick={function(){trocarVinculo(it.idx);}} style={{background:'rgba(0,0,0,.07)',border:'none',borderRadius:7,padding:'5px 8px',fontSize:11,color:'#065F46',cursor:'pointer',fontWeight:600}}>Trocar</button>
+                        </div>}
+                        {it.incluir&&!it.daMemoria&&it.confirmado&&it.medId&&<div style={{marginTop:8,background:'#D1FAE5',borderRadius:8,padding:'7px 10px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                          <div>
+                            <div style={{fontSize:10,color:'#065F46',fontWeight:700,textTransform:'uppercase'}}>Vinculado ({it.confianca}%)</div>
+                            <div style={{fontSize:12,color:'#059669',fontWeight:700,marginTop:1}}>{it.medCasado&&it.medCasado.nome}</div>
+                          </div>
+                          <button onClick={function(){trocarVinculo(it.idx);}} style={{background:'rgba(0,0,0,.07)',border:'none',borderRadius:7,padding:'5px 8px',fontSize:11,color:'#065F46',cursor:'pointer',fontWeight:600}}>Trocar</button>
+                        </div>}
+                        {it.incluir&&!it.confirmado&&it.medId&&<div style={{marginTop:8,background:'#FEF9C3',borderRadius:10,padding:'10px 12px',border:'1px solid #FDE047'}}>
+                          <div style={{fontSize:11,color:'#713F12',fontWeight:700,marginBottom:6}}>🤔 O sistema acredita que e o mesmo produto — confirma?</div>
+                          <div style={{background:'#fff',borderRadius:8,padding:'8px 10px',marginBottom:8,border:'1px solid #FDE047'}}>
+                            <div style={{fontSize:10,color:'#92400E',textTransform:'uppercase',marginBottom:1}}>Nota fiscal</div>
+                            <div style={{fontWeight:700,fontSize:12,color:'#1E293B'}}>{it.xProd}</div>
+                            <div style={{textAlign:'center',fontSize:14,margin:'3px 0'}}>downarrow</div>
+                            <div style={{fontSize:10,color:'#15803D',textTransform:'uppercase',marginBottom:1}}>No sistema</div>
+                            <div style={{fontWeight:700,fontSize:13,color:'#15803D'}}>{it.medCasado&&it.medCasado.nome}</div>
+                            <div style={{fontSize:10,color:'#D97706',marginTop:3,fontWeight:600}}>Confianca: {it.confianca}%</div>
+                          </div>
+                          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                            <button onClick={function(){confirmarVinculo(it.idx);}} style={{padding:'9px',background:'#16A34A',border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:12,cursor:'pointer'}}>Sim, e o mesmo</button>
+                            <button onClick={function(){trocarVinculo(it.idx);}} style={{padding:'9px',background:'#fff',border:'1.5px solid #EF4444',borderRadius:8,color:'#DC2626',fontWeight:700,fontSize:12,cursor:'pointer'}}>Nao, trocar</button>
+                          </div>
+                        </div>}
+                        {it.incluir&&!it.medId&&<div style={{marginTop:8,background:'#FEE2E2',borderRadius:10,padding:'10px 12px',border:'1px solid #FECACA'}}>
+                          <div style={{fontSize:11,color:'#991B1B',fontWeight:700,marginBottom:6}}>Nao encontrado — selecione manualmente:</div>
+                          <select value={it.medId} onChange={function(e){setMedItem(it.idx,e.target.value);}} style={{width:'100%',padding:'9px 10px',borderRadius:8,border:'1.5px solid #FECACA',fontSize:12,background:'#fff',boxSizing:'border-box'}}>
+                            <option value=''>-- Selecione --</option>
+                            {(medications||[]).map(function(m){return <option key={m.id} value={m.id}>{m.nome}</option>;})}
+                          </select>
+                        </div>}
+                        {it.incluir&&it.medId&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginTop:8}}>
+                          <div>
+                            <div style={{fontSize:10,color:'#64748B',marginBottom:3,fontWeight:600}}>QTD</div>
+                            <input type='number' value={it.qCom} onChange={function(e){setQtdItem(it.idx,e.target.value);}} min='1' style={{width:'100%',padding:'8px',borderRadius:8,border:'1.5px solid #E2E8F0',fontSize:13,fontWeight:700,textAlign:'center',boxSizing:'border-box'}}/>
+                          </div>
+                          <div>
+                            <div style={{fontSize:10,color:'#64748B',marginBottom:3,fontWeight:600}}>LOTE</div>
+                            <input value={it.lote} onChange={function(e){setLoteItem(it.idx,e.target.value);}} placeholder='Ex: L001' style={{width:'100%',padding:'8px',borderRadius:8,border:'1.5px solid #E2E8F0',fontSize:12,boxSizing:'border-box'}}/>
+                          </div>
+                          <div>
+                            <div style={{fontSize:10,color:'#64748B',marginBottom:3,fontWeight:600}}>VALIDADE</div>
+                            <input value={it.dVal} onChange={function(e){setValItem(it.idx,e.target.value);}} placeholder='AAAAMMDD' style={{width:'100%',padding:'8px',borderRadius:8,border:'1.5px solid #E2E8F0',fontSize:12,boxSizing:'border-box'}}/>
+                          </div>
+                        </div>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div style={{background:'#fff',borderRadius:16,padding:16,boxShadow:'0 2px 12px rgba(0,0,0,.06)'}}>
+            <div style={{fontWeight:700,fontSize:14,color:'#1E293B',marginBottom:12}}>Resumo da Importacao</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}><span style={{color:'#64748B'}}>Total de itens</span><span style={{fontWeight:700}}>{itemsEdit.length}</span></div>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}><span style={{color:'#059669'}}>Prontos para entrada</span><span style={{fontWeight:700,color:'#059669'}}>{totalConf}</span></div>
+              {totalAguard>0&&<div style={{display:'flex',justifyContent:'space-between',fontSize:13}}><span style={{color:'#D97706'}}>Aguardando confirmacao</span><span style={{fontWeight:700,color:'#D97706'}}>{totalAguard}</span></div>}
+              {totalSemV>0&&<div style={{display:'flex',justifyContent:'space-between',fontSize:13}}><span style={{color:'#DC2626'}}>Sem vinculo</span><span style={{fontWeight:700,color:'#DC2626'}}>{totalSemV}</span></div>}
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:13,paddingTop:6,borderTop:'1px solid #F1F5F9'}}><span style={{color:'#64748B'}}>Valor total</span><span style={{fontWeight:800,color:B}}>{fMoeda(preview.vTotal)}</span></div>
+            </div>
+            {totalAguard>0&&<div style={{background:'#FEF9C3',borderRadius:10,padding:10,fontSize:12,color:'#713F12',fontWeight:600,textAlign:'center',marginBottom:10}}>Confirme os {totalAguard} item(ns) em duvida para liberar a importacao</div>}
+            {totalConf===0&&totalAguard===0
+              ?<div style={{background:'#FEE2E2',borderRadius:10,padding:12,fontSize:13,color:'#DC2626',fontWeight:600,textAlign:'center'}}>Nenhum item pronto. Vincule ao menos um.</div>
+              :<button onClick={confirmarEntrada} disabled={confirmando||totalAguard>0} style={{width:'100%',padding:'16px',background:confirmando?'#94A3B8':totalAguard>0?'#D97706':'#059669',border:'none',borderRadius:13,color:'#fff',fontWeight:800,fontSize:15,cursor:confirmando||totalAguard>0?'default':'pointer',opacity:confirmando||totalAguard>0?0.85:1}}>
+                {confirmando?'Importando...':totalAguard>0?'Confirme os itens em duvida antes':'Confirmar e Atualizar Estoque ('+totalConf+' item'+(totalConf>1?'s':'')+')'}
+              </button>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{padding:'0 0 80px'}}>
+      <div style={{background:'linear-gradient(135deg,#0F766E,#1351B4)',padding:'20px 16px 24px',borderRadius:'0 0 24px 24px',marginBottom:16}}>
+        <div style={{color:'rgba(255,255,255,.7)',fontSize:12,textTransform:'uppercase',letterSpacing:1}}>Farmacia Hospitalar</div>
+        <div style={{color:'#fff',fontSize:20,fontWeight:700,marginTop:2}}>Notas Fiscais</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginTop:14}}>
+          <div style={{background:'rgba(255,255,255,.12)',borderRadius:12,padding:'10px 8px',textAlign:'center',border:'1px solid rgba(255,255,255,.15)'}}>
+            <div style={{color:'#fff',fontSize:20,fontWeight:800}}>{notas.length}</div>
+            <div style={{color:'rgba(255,255,255,.7)',fontSize:10}}>Notas</div>
+          </div>
+          <div style={{background:'rgba(255,255,255,.12)',borderRadius:12,padding:'10px 8px',textAlign:'center',border:'1px solid rgba(255,255,255,.15)'}}>
+            <div style={{color:'#fff',fontSize:20,fontWeight:800}}>{Object.keys(vinculos).length}</div>
+            <div style={{color:'rgba(255,255,255,.7)',fontSize:10}}>Memorizados</div>
+          </div>
+          <div style={{background:'rgba(255,255,255,.12)',borderRadius:12,padding:'10px 8px',textAlign:'center',border:'1px solid rgba(255,255,255,.15)'}}>
+            <div style={{color:'#fff',fontSize:13,fontWeight:800}}>{fMoeda(notas.reduce(function(s,n){return s+parseFloat(n.vTotal||0);},0))}</div>
+            <div style={{color:'rgba(255,255,255,.7)',fontSize:10}}>Total</div>
+          </div>
+        </div>
+      </div>
+      <div style={{padding:'0 16px',marginBottom:14}}>
+        {erro&&<div style={{background:'#FEE2E2',borderRadius:12,padding:'11px 14px',marginBottom:12,fontSize:13,color:'#DC2626',fontWeight:600,border:'1px solid #FECACA'}}>{erro}</div>}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+          <label style={{display:'block',background:'#fff',borderRadius:14,padding:18,boxShadow:'0 2px 10px rgba(0,0,0,.06)',border:'2px dashed #BFDBFE',cursor:'pointer',textAlign:'center'}}>
+            <input type='file' accept='.xml' onChange={lerXML} style={{display:'none'}}/>
+            {loading?<div style={{color:B,fontSize:12,fontWeight:600}}>Processando...</div>:<div>
+              <div style={{fontSize:32,marginBottom:6}}>🗂</div>
+              <div style={{fontWeight:700,fontSize:13,color:'#1E293B'}}>Importar XML</div>
+              <div style={{fontSize:11,color:'#64748B',marginTop:2}}>NF-e oficial</div>
+              <div style={{background:'#EFF6FF',color:B,fontWeight:700,fontSize:11,padding:'4px 10px',borderRadius:8,display:'inline-block',marginTop:8}}>100% preciso</div>
+            </div>}
+          </label>
+          <label style={{display:'block',background:'#fff',borderRadius:14,padding:18,boxShadow:'0 2px 10px rgba(0,0,0,.06)',border:'2px dashed #E2E8F0',cursor:'pointer',textAlign:'center'}}>
+            <input type='file' accept='.pdf' onChange={lerPDF} style={{display:'none'}}/>
+            <div>
+              <div style={{fontSize:32,marginBottom:6}}>📑</div>
+              <div style={{fontWeight:700,fontSize:13,color:'#1E293B'}}>Importar PDF</div>
+              <div style={{fontSize:11,color:'#64748B',marginTop:2}}>DANFE impresso</div>
+              <div style={{background:'#FEF3C7',color:'#92400E',fontWeight:700,fontSize:11,padding:'4px 10px',borderRadius:8,display:'inline-block',marginTop:8}}>Requer revisao</div>
+            </div>
+          </label>
+        </div>
+        {Object.keys(vinculos).length>0&&<div style={{background:'#F0FDF4',borderRadius:12,padding:'10px 14px',marginBottom:10,border:'1px solid #BBF7D0'}}>
+          <div style={{fontSize:12,color:'#059669',fontWeight:700}}>🧠 {Object.keys(vinculos).length} produto(s) ja memorizados — proximas notas serao ainda mais rapidas!</div>
+        </div>}
+        <div style={{background:'#EFF6FF',borderRadius:12,padding:'10px 14px',border:'1px solid #BFDBFE'}}>
+          <div style={{fontSize:12,color:'#1D4ED8',fontWeight:700,marginBottom:2}}>Dica</div>
+          <div style={{fontSize:12,color:'#3730A3',lineHeight:1.6}}>Prefira sempre o XML — e 100% fiel a nota. O sistema memoriza os vinculos confirmados automaticamente.</div>
+        </div>
+      </div>
+      <div style={{padding:'0 16px'}}>
+        <div style={{fontWeight:700,fontSize:15,color:'#1E293B',marginBottom:10}}>Historico de Notas</div>
+        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:12}}>
+          <input value={filtroBusca} onChange={function(e){setFiltroBusca(e.target.value);}} placeholder='Buscar por NF# ou fornecedor...' style={{width:'100%',padding:'10px 14px',borderRadius:10,border:'1.5px solid #E2E8F0',fontSize:13,boxSizing:'border-box'}}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            <input type='date' value={filtroDataDe} onChange={function(e){setFiltroDataDe(e.target.value);}} title='De' style={{width:'100%',padding:'9px',borderRadius:10,border:'1.5px solid #E2E8F0',fontSize:12,boxSizing:'border-box'}}/>
+            <input type='date' value={filtroDataAte} onChange={function(e){setFiltroDataAte(e.target.value);}} title='Ate' style={{width:'100%',padding:'9px',borderRadius:10,border:'1.5px solid #E2E8F0',fontSize:12,boxSizing:'border-box'}}/>
+          </div>
+          {uniqueForns.length>1&&<select value={filtroForns} onChange={function(e){setFiltroForns(e.target.value);}} style={{width:'100%',padding:'9px',borderRadius:10,border:'1.5px solid #E2E8F0',fontSize:12,background:'#fff',boxSizing:'border-box'}}>
+            <option value=''>Todos os fornecedores</option>
+            {uniqueForns.map(function(f){return <option key={f} value={f}>{f}</option>;})}
+          </select>}
+          {(filtroBusca||filtroForns||filtroDataDe||filtroDataAte)&&<button onClick={function(){setFiltroBusca('');setFiltroForns('');setFiltroDataDe('');setFiltroDataAte('');}} style={{padding:'8px',background:'#F1F5F9',border:'none',borderRadius:10,fontSize:12,color:'#64748B',cursor:'pointer',fontWeight:600}}>Limpar filtros</button>}
+        </div>
+        {notasFiltradas.length===0&&<div style={{textAlign:'center',padding:40,color:'#94A3B8',background:'#fff',borderRadius:16}}>Nenhuma nota encontrada</div>}
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {notasFiltradas.map(function(n){
+            return (
+              <div key={n.id} style={{background:'#fff',borderRadius:14,padding:14,boxShadow:'0 2px 8px rgba(0,0,0,.05)',border:'1.5px solid #F1F5F9',cursor:'pointer'}} onClick={function(){setDetNota(n);}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:14,color:'#1E293B'}}>NF {n.nNF}</div>
+                    <div style={{fontSize:12,color:'#64748B',marginTop:1}}>{n.fornecedorNome}</div>
+                  </div>
+                  <div style={{textAlign:'right'}}>
+                    <div style={{fontWeight:800,fontSize:14,color:B}}>{fMoeda(n.vTotal)}</div>
+                    <div style={{fontSize:11,color:'#94A3B8',marginTop:1}}>{fD(n.dataEmissao)}</div>
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                  <span style={{background:'#D1FAE5',color:'#059669',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:20}}>{(n.itensSalvos||[]).length} item(ns)</span>
+                  <span style={{background:n.tipo==='pdf'?'#FEF3C7':'#EFF6FF',color:n.tipo==='pdf'?'#92400E':B,fontSize:11,fontWeight:600,padding:'3px 8px',borderRadius:20}}>{n.tipo==='pdf'?'PDF':'XML'}</span>
+                  <span style={{background:'#F8FAFC',color:'#64748B',fontSize:11,padding:'3px 8px',borderRadius:20}}>por {n.importadoPor}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {detNota&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={function(){setDetNota(null);}}>
+        <div style={{background:'#fff',borderRadius:'24px 24px 0 0',padding:'24px 20px 40px',width:'100%',maxWidth:480,maxHeight:'90vh',overflowY:'auto'}} onClick={function(e){e.stopPropagation();}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+            <div>
+              <div style={{fontWeight:800,fontSize:17,color:'#1E293B'}}>NF {detNota.nNF}</div>
+              <div style={{fontSize:12,color:'#64748B',marginTop:2}}>{detNota.fornecedorNome}</div>
+            </div>
+            <button onClick={function(){setDetNota(null);}} style={{background:'#F1F5F9',border:'none',borderRadius:10,width:36,height:36,cursor:'pointer',fontSize:18}}>X</button>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
+            <div style={{background:'#F8FAFC',borderRadius:10,padding:'10px 12px'}}>
+              <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>Emissao</div>
+              <div style={{fontWeight:700,fontSize:13}}>{fD(detNota.dataEmissao)||'—'}</div>
+            </div>
+            <div style={{background:'#EFF6FF',borderRadius:10,padding:'10px 12px'}}>
+              <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>Valor Total</div>
+              <div style={{fontWeight:800,fontSize:14,color:B}}>{fMoeda(detNota.vTotal)}</div>
+            </div>
+            {detNota.fornecedorCNPJ&&<div style={{background:'#F8FAFC',borderRadius:10,padding:'10px 12px'}}>
+              <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>CNPJ</div>
+              <div style={{fontWeight:600,fontSize:12}}>{detNota.fornecedorCNPJ}</div>
+            </div>}
+            <div style={{background:'#F8FAFC',borderRadius:10,padding:'10px 12px'}}>
+              <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>Importado por</div>
+              <div style={{fontWeight:600,fontSize:12}}>{detNota.importadoPor}</div>
+            </div>
+          </div>
+          {detNota.chaveAcesso&&<div style={{background:'#F8FAFC',borderRadius:10,padding:'10px 12px',marginBottom:14}}>
+            <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:3}}>Chave de Acesso</div>
+            <div style={{fontSize:10,color:'#475569',wordBreak:'break-all',fontFamily:'monospace'}}>{detNota.chaveAcesso}</div>
+          </div>}
+          <div style={{fontWeight:700,fontSize:13,color:'#1E293B',marginBottom:8}}>Itens adicionados ao estoque</div>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {(detNota.itensSalvos||[]).map(function(it,i){
+              return (
+                <div key={i} style={{background:'#F0FDF4',borderRadius:10,padding:'10px 12px',border:'1px solid #D1FAE5'}}>
+                  <div style={{fontWeight:600,fontSize:13,color:'#065F46'}}>{it.nome}</div>
+                  <div style={{fontSize:12,color:'#059669'}}>Qtd: {it.qtd}{it.lote?' · Lote: '+it.lote:''}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>}
+    </div>
+  );
+}
+
+
 function TabAntibiotico({user,medications,stock}){
   var sl=React.useState,ef=React.useEffect,B='#1351B4';
   var _tr=sl([]);var tratamentos=_tr[0];var setTratamentos=_tr[1];
@@ -1132,7 +1591,7 @@ if(pendingInvite)return <InviteScreen invite={pendingInvite} onConfirm={handleCo
 var isManagerRole=(user.role==='gestor'||user.role==='tecnico');
 var canMove=isManagerRole||!isGuest;
 var badge=pending+alertCount+solicitCount;
-var navTabs=[{id:'dashboard',icon:'🏠',label:'Inicio',show:true},{id:'saida',icon:'💊',label:'Saida',show:true},{id:'entrada',icon:'📥',label:'Entrada',show:true},{id:'estoque',icon:'📦',label:'Estoque',show:true},{id:'antibiotico',icon:'🧬',label:'ATB',show:true},{id:'relatorio',icon:'📊',label:'Relatorio',show:can(user.role,'relatorio')},{id:'gestao',icon:'👥',label:'Gestao',show:can(user.role,'gestao'),badge:badge},{id:'log',icon:'🔐',label:'Log',show:can(user.role,'log')},{id:'histcontas',icon:'📋',label:'Contas',show:can(user.role,'log')},{id:'perfil',icon:'👤',label:'Perfil',show:true}].filter(function(t){return t.show;});
+var navTabs=[{id:'dashboard',icon:'🏠',label:'Inicio',show:true},{id:'saida',icon:'💊',label:'Saida',show:true},{id:'entrada',icon:'📥',label:'Entrada',show:true},{id:'estoque',icon:'📦',label:'Estoque',show:true},{id:'antibiotico',icon:'🧬',label:'ATB',show:true},{id:'notas',icon:'📄',label:'Notas',show:true},{id:'relatorio',icon:'📊',label:'Relatorio',show:can(user.role,'relatorio')},{id:'gestao',icon:'👥',label:'Gestao',show:can(user.role,'gestao'),badge:badge},{id:'log',icon:'🔐',label:'Log',show:can(user.role,'log')},{id:'histcontas',icon:'📋',label:'Contas',show:can(user.role,'log')},{id:'perfil',icon:'👤',label:'Perfil',show:true}].filter(function(t){return t.show;});
 return(
 <div style={{minHeight:'100vh',background:'#EEF2F7',position:'relative',overflow:'hidden'}}>
   {/* MARCA D'ÁGUA BACKGROUND */}
@@ -1209,6 +1668,7 @@ return(
         {tab==='log'&&can(user.role,'log')&&<TabLog/>}
         {tab==='histcontas'&&can(user.role,'log')&&<TabHistContas/>}
         {tab==='antibiotico'&&<TabAntibiotico user={user} medications={meds} stock={stock}/>}
+        {tab==='notas'&&<TabNotas user={user} medications={meds}/>}
         {tab==='perfil'&&<TabPerfil user={user} onUpdate={function(u){setUser(u);}} onLogout={logout} entries={entries} medications={meds} stock={stock}/>}
       </div>
     )}
