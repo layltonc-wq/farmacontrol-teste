@@ -837,26 +837,43 @@ function TabNotas({user,medications}){
   }
 
   function parsearPDF(texto,filename){
-    var nNFm=texto.match(/N[uU][mM][eE][rR][oO]\s*:?\s*(\d{1,9})/)||texto.match(/N[oO]\s*\.?\s*(\d{6,9})/)||texto.match(/NF-?e?\s+(\d{6,9})/i);
+    var ehFoto=filename.startsWith('foto_nota');
+    var tipo=ehFoto?'foto':'pdf';
+    var nNFm=texto.match(/N[uU][mM][eE][rR][oO]\s*:?\s*(\d{1,9})/)||texto.match(/NF[\s\-e]*n?[\s\.]*[oO°]?[\s\.]*:?\s*(\d{6,9})/i)||texto.match(/\b(\d{6,9})\b/);
     var nNF=nNFm?nNFm[1]:'(verificar)';
-    var dtm=texto.match(/emiss[ao]o[:\s]*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i)||texto.match(/(\d{2}\/\d{2}\/\d{4})/);
+    var dtm=texto.match(/emiss[ao][oa][:\s]*(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i)||texto.match(/(\d{2}\/\d{2}\/\d{4})/);
     var dataEmissao='';
     if(dtm){var pts=dtm[1].split(/[\/\-]/);dataEmissao=pts[2]+'-'+pts[1]+'-'+pts[0];}
-    var cnpjs=texto.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/g)||[];
+    var cnpjs=texto.match(/\d{2}\.?\d{3}\.?\d{3}[\/]?\d{4}[-]?\d{2}/g)||[];
     var fornecedorCNPJ=cnpjs[0]||'';
-    var vtm=texto.match(/VALOR TOTAL[^0-9]*(\d[\d.,]+)/i)||texto.match(/TOTAL GERAL[^0-9]*(\d[\d.,]+)/i);
-    var vTotal=vtm?vtm[1].replace(/\./g,'').replace(',','.').trim():'0';
+    var fornecedorNome='(Verificar na nota)';
+    var vtm=texto.match(/VALOR\s*TOTAL\s*[:\s]*(R\$\s*)?([\d.,]+)/i)||texto.match(/TOTAL\s*[:\s]*(R\$\s*)?([\d.,]+)/i);
+    var vTotal=vtm?(vtm[2]||vtm[1]||'0').replace(/[R$\s]/g,'').replace('.','').replace(',','.').trim():'0';
     var itens=[];
-    texto.split('\n').forEach(function(linha){
-      var l=linha.trim();
-      var m=l.match(/^(.{5,60}?)\s+(\d+(?:[.,]\d+)?)\s+(?:UN|AMP|FR|CX|CP|ML|KG|VD)\s/i);
-      if(m){
-        var desc=m[1].trim();var qtd=parseFloat(m[2].replace(',','.'));
-        if(desc.length>4&&qtd>0&&qtd<100000)itens.push({xProd:desc.toUpperCase(),cProd:'',qCom:qtd,uCom:'UN',vUnCom:0,vProd:0,lote:'',dFab:'',dVal:'',incluir:true,tipo:'pdf',doPDF:true});
+    var unidades='UN|UNID|AMP|AMPOLA|FR|FRASCO|CX|CAIXA|CP|COMP|ML|KG|G|VD|PC|PCT|BIS|CAP|SER|BCA|FAR|SAC|TB|TUBO';
+    var linhas=texto.split('\n');
+    for(var i=0;i<linhas.length;i++){
+      var l=linhas[i].trim();
+      if(!l||l.length<5)continue;
+      // Padrão 1: descrição + qtd + unidade na mesma linha
+      var m1=l.match(new RegExp('(.{4,60}?)\\s+(\\d+(?:[.,]\\d+)?)\\s+('+unidades+')\\b','i'));
+      if(m1){
+        var desc=m1[1].replace(/^\d+\s+/,'').trim();
+        var qtd=parseFloat(m1[2].replace(',','.'));
+        if(desc.length>=4&&qtd>0&&qtd<100000&&!/^(TOTAL|VALOR|PESO|FRETE|DESCONTO)/i.test(desc)){
+          itens.push({xProd:desc.toUpperCase(),cProd:'',qCom:qtd,uCom:m1[3].toUpperCase(),vUnCom:0,vProd:0,lote:'',dFab:'',dVal:'',incluir:true,tipo:tipo});
+          continue;
+        }
       }
-    });
+      // Padrão 2: linha com apenas nome de medicamento conhecido (para OCR fragmentado)
+      var m2=l.match(/^([A-Z][A-Za-z]{3,}(?:\s+[A-Za-z0-9]+){1,4})\s+(\d{1,5})\s*$/);
+      if(m2){
+        var desc2=m2[1].trim();var qtd2=parseFloat(m2[2]);
+        if(qtd2>0&&qtd2<10000)itens.push({xProd:desc2.toUpperCase(),cProd:'',qCom:qtd2,uCom:'UN',vUnCom:0,vProd:0,lote:'',dFab:'',dVal:'',incluir:true,tipo:tipo});
+      }
+    }
     var com=aplicarVinculos(itens);
-    setPreview({nNF:nNF,dataEmissao:dataEmissao,fornecedorNome:'(Verificar na DANFE)',fornecedorCNPJ:fornecedorCNPJ,chaveAcesso:'',vTotal:vTotal,nomeArquivo:filename,tipo:'pdf',textoRaw:texto.substring(0,2000)});
+    setPreview({nNF:nNF,dataEmissao:dataEmissao,fornecedorNome:fornecedorNome,fornecedorCNPJ:fornecedorCNPJ,chaveAcesso:'',vTotal:vTotal,nomeArquivo:filename,tipo:tipo,textoOCR:texto.substring(0,3000)});
     setItemsEdit(com.map(function(it,i){return Object.assign({},it,{idx:i});}));
   }
 
@@ -941,9 +958,11 @@ function TabNotas({user,medications}){
               <div style={{fontSize:10,color:'#94A3B8',textTransform:'uppercase',marginBottom:2}}>Chave de Acesso</div>
               <div style={{fontSize:10,color:'#475569',wordBreak:'break-all',fontFamily:'monospace'}}>{preview.chaveAcesso}</div>
             </div>}
-            {preview.tipo==='pdf'&&itemsEdit.length===0&&<div style={{marginTop:10,background:'#FEF3C7',borderRadius:10,padding:'10px 12px',border:'1px solid #FCD34D'}}>
-              <div style={{fontSize:12,fontWeight:700,color:'#92400E',marginBottom:3}}>PDF: itens nao identificados automaticamente</div>
-              <div style={{fontSize:11,color:'#92400E'}}>Os dados do cabecalho foram preenchidos. Confira e edite os itens manualmente consultando a DANFE impressa.</div>
+            {(preview.tipo==='pdf'||preview.tipo==='foto')&&itemsEdit.length===0&&<div style={{marginTop:10,background:'#FEF3C7',borderRadius:10,padding:'12px 14px',border:'1px solid #FCD34D'}}>
+              <div style={{fontSize:13,fontWeight:700,color:'#92400E',marginBottom:6}}>{preview.tipo==='foto'?'📸 OCR nao identificou itens automaticamente':'PDF: itens nao identificados'}</div>
+              <div style={{fontSize:12,color:'#92400E',marginBottom:10}}>Adicione os itens manualmente usando o botao abaixo. Os dados do cabecalho foram preenchidos — confira e corrija se necessario.</div>
+              <button onClick={function(){setItemsEdit([{idx:0,xProd:'',cProd:'',qCom:1,uCom:'UN',vUnCom:0,vProd:0,lote:'',dFab:'',dVal:'',incluir:true,tipo:'manual',medId:'',medCasado:null,confirmado:false,confianca:0}]);}} style={{width:'100%',padding:'10px',background:'#F59E0B',border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer'}}>+ Adicionar item manualmente</button>
+              {preview.textoOCR&&<details style={{marginTop:10}}><summary style={{fontSize:11,color:'#92400E',cursor:'pointer',fontWeight:600}}>Ver texto extraido pelo OCR</summary><pre style={{fontSize:9,color:'#475569',marginTop:6,background:'#fff',padding:8,borderRadius:6,maxHeight:150,overflow:'auto',whiteSpace:'pre-wrap',wordBreak:'break-all'}}>{preview.textoOCR}</pre></details>}
             </div>}
           </div>
           <div style={{background:'#fff',borderRadius:16,padding:16,boxShadow:'0 2px 12px rgba(0,0,0,.06)'}}>
@@ -968,7 +987,9 @@ function TabNotas({user,medications}){
                     <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
                       <input type='checkbox' checked={it.incluir} onChange={function(){toggleItem(it.idx);}} style={{marginTop:4,width:16,height:16,cursor:'pointer'}}/>
                       <div style={{flex:1}}>
-                        <div style={{fontWeight:700,fontSize:13,color:skip?'#94A3B8':'#1E293B',textDecoration:skip?'line-through':'none'}}>{it.xProd}</div>
+                        {it.tipo==='manual'&&!skip
+                          ?<input value={it.xProd} onChange={function(e){var v=e.target.value;setItemsEdit(function(prev){return prev.map(function(i){return i.idx===it.idx?Object.assign({},i,{xProd:v.toUpperCase()}):i;});});}} placeholder='Nome do medicamento...' style={{width:'100%',padding:'8px 10px',borderRadius:8,border:'1.5px solid #E2E8F0',fontSize:13,fontWeight:700,marginBottom:4,boxSizing:'border-box'}}/>
+                          :<div style={{fontWeight:700,fontSize:13,color:skip?'#94A3B8':'#1E293B',textDecoration:skip?'line-through':'none'}}>{it.xProd||'(sem nome)'}</div>}
                         <div style={{fontSize:11,color:'#64748B',marginTop:2}}>Qtd: <strong>{it.qCom} {it.uCom}</strong>{it.lote?' · Lote: '+it.lote:''}{it.dVal?' · Val: '+fDxml(it.dVal):''}</div>
                         <div style={{fontSize:11,color:'#94A3B8'}}>{fMoeda(it.vUnCom)}/un · Total: {fMoeda(it.vProd)}</div>
                         {it.incluir&&it.daMemoria&&it.confirmado&&it.medId&&<div style={{marginTop:8,background:'#D1FAE5',borderRadius:8,padding:'7px 10px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -1027,6 +1048,7 @@ function TabNotas({user,medications}){
                 );
               })}
             </div>
+            {itemsEdit.length>0&&<button onClick={function(){setItemsEdit(function(prev){var idx=prev.length;return prev.concat([{idx:idx,xProd:'',cProd:'',qCom:1,uCom:'UN',vUnCom:0,vProd:0,lote:'',dFab:'',dVal:'',incluir:true,tipo:'manual',medId:'',medCasado:null,confirmado:false,confianca:0}]);});}} style={{width:'100%',padding:'10px',background:'#F8FAFC',border:'1.5px dashed #CBD5E1',borderRadius:10,color:'#64748B',fontWeight:600,fontSize:13,cursor:'pointer',marginTop:8}}>+ Adicionar item</button>}
           </div>
           <div style={{background:'#fff',borderRadius:16,padding:16,boxShadow:'0 2px 12px rgba(0,0,0,.06)'}}>
             <div style={{fontWeight:700,fontSize:14,color:'#1E293B',marginBottom:12}}>Resumo da Importacao</div>
