@@ -1473,6 +1473,7 @@ function TabAntibiotico({user,medications,stock}){
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:15,color:'#1E293B'}}>{t.pacienteNome}</div>
                   {(t.nomeMedico||t.crmMedico)&&<div style={{fontSize:11,color:'#64748B',marginTop:2}}>👨‍⚕️ {t.nomeMedico}{t.crmMedico?' · CRM: '+t.crmMedico:''}</div>}
+                  {t.criadoPor&&<div style={{fontSize:11,color:'#94A3B8',marginTop:2}}>📋 Cadastrado por: <span style={{fontWeight:600,color:'#64748B'}}>{t.criadoPor}</span></div>}
                   {s==='espera'&&<div style={{fontSize:11,fontWeight:600,marginTop:2,color:de>=3?'#DC2626':de>=2?'#D97706':'#D97706'}}>{de>=3?'🚨 '+de+' dias - PRAZO VENCIDO!':'⏳ Dia '+de+' de 3 em espera'}</div>}
                   {s==='dose_ataque'&&<div style={{fontSize:11,fontWeight:600,marginTop:2,color:'#7C3AED'}}>⚡ {t.doseAtaqueRegistradoPor||'—'} · {t.doseAtaqueData?fD(t.doseAtaqueData):''}{t.doseAtaqueHora?' as '+t.doseAtaqueHora:''}</div>}
                   {s!=='espera'&&s!=='dose_ataque'&&total>0&&<div style={{fontSize:11,color:'#94A3B8',marginTop:2}}>Inicio: {fD(t.dataInicio)} · {total} dias</div>}
