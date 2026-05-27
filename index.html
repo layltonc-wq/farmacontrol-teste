@@ -617,14 +617,23 @@ function TabLog(){var _logs=useState([]);var logs=_logs[0];var setLogs=_logs[1];
 
 function TabHistContas(){var _logs=useState([]);var logs=_logs[0];var setLogs=_logs[1];useEffect(function(){db.collection('logs_contas').limit(100).onSnapshot(function(s){var list=s.docs.map(function(d){var o={id:d.id};var data=d.data();for(var k in data)o[k]=data[k];return o;});list.sort(function(a,b){return (b.criadoEm||'').localeCompare(a.criadoEm||'');});setLogs(list);});},[]);var styles={aprovado:{cls:'badge-green',txt:'Aprovado'},recusado:{cls:'badge-red',txt:'Recusado'},desativado:{cls:'badge-red',txt:'Desativado'},reativado:{cls:'badge-green',txt:'Reativado'}};return(<div style={{maxWidth:700,margin:'0 auto',padding:'16px 14px'}}><div className="card"><div className="ch"><div className="ch-title"><div className="ch-accent"/><span>Historico de Contas</span></div><span style={{fontSize:12,color:'#94A3B8',fontWeight:500}}>{logs.length} registros</span></div>{logs.length===0?<div style={{padding:32,textAlign:'center',color:'#94A3B8'}}>Nenhum registro.</div>:<div>{logs.map(function(l,i){var st=styles[l.acao]||{cls:'badge-gray',txt:l.acao};return(<div key={l.id} style={{padding:'13px 20px',borderBottom:i<logs.length-1?'1px solid #F8FAFC':'none',display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}><div style={{flex:1}}><div style={{fontWeight:600,fontSize:14,color:'#1E293B'}}>{l.nome}</div><div style={{fontSize:12,color:'#64748B',marginTop:2}}>{ROLES[l.cargo]||l.cargo} · por: <strong>{l.por}</strong></div><div style={{fontSize:11,color:'#94A3B8',marginTop:2}}>{fmtD(l.criadoEm)} {fmtT(l.criadoEm)}</div></div><span className={'badge '+st.cls}>{st.txt}</span></div>);}  )}</div>}</div></div>);}
 function SeletorAmbiente({user}){
-  if(user.role!=='tecnico')return null;
+  var _open=useState(false);var open=_open[0];var setOpen=_open[1];
+  if(!user||user.role!=='tecnico')return null;
   var env=localStorage.getItem('farmacontrol_env')||'prod';
-  return React.createElement('div',{style:{position:'fixed',bottom:20,right:20,background:'#fff',borderRadius:12,padding:16,boxShadow:'0 4px 20px rgba(0,0,0,0.15)',zIndex:900,minWidth:200}},
-    React.createElement('div',{style:{fontSize:12,fontWeight:700,color:'#1E293B',marginBottom:8}},'⚙️ Trocar Ambiente'),
-    React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:8}},
-      React.createElement('button',{onClick:function(){localStorage.setItem('farmacontrol_env','prod');window.location.reload();},style:{padding:'10px',background:env==='prod'?'#059669':'#E2E8F0',color:env==='prod'?'#fff':'#1E293B',border:'none',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}},'🟢 PRODUÇÃO'),
-      React.createElement('button',{onClick:function(){localStorage.setItem('farmacontrol_env','dev');window.location.reload();},style:{padding:'10px',background:env==='dev'?'#F59E0B':'#E2E8F0',color:env==='dev'?'#fff':'#1E293B',border:'none',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}},'🧪 TESTES')
-    )
+  var isDev=env==='dev';
+  return (
+    <div style={{position:'fixed',bottom:76,right:16,zIndex:999}}>
+      {open&&<div style={{background:'#fff',borderRadius:14,padding:16,boxShadow:'0 4px 24px rgba(0,0,0,0.18)',marginBottom:8,minWidth:180}}>
+        <div style={{fontSize:12,fontWeight:700,color:'#1E293B',marginBottom:10}}>⚙️ Trocar Ambiente</div>
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          <button onClick={function(){localStorage.setItem('farmacontrol_env','prod');window.location.reload();}} style={{padding:'10px',background:!isDev?'#059669':'#F1F5F9',color:!isDev?'#fff':'#1E293B',border:'none',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>🟢 PRODUÇÃO</button>
+          <button onClick={function(){localStorage.setItem('farmacontrol_env','dev');window.location.reload();}} style={{padding:'10px',background:isDev?'#F59E0B':'#F1F5F9',color:isDev?'#fff':'#1E293B',border:'none',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>🧪 TESTES</button>
+        </div>
+      </div>}
+      <button onClick={function(){setOpen(!open);}} style={{width:48,height:48,borderRadius:99,background:isDev?'#F59E0B':'#1351B4',border:'none',boxShadow:'0 4px 16px rgba(0,0,0,0.2)',cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center',marginLeft:'auto'}}>
+        {isDev?'🧪':'⚙️'}
+      </button>
+    </div>
   );
 }
 function TabPerfil(props){var user=props.user;var onUpdate=props.onUpdate;var onLogout=props.onLogout;var entries=props.entries;var medications=props.medications;var stock=props.stock;
