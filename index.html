@@ -317,7 +317,7 @@ return(<div style={{maxWidth:700,margin:'0 auto',padding:'16px 14px'}}>
   </div>
 </div>);}
 
-function TabSaida(props){var user=props.user;var medications=props.medications;var stock=props.stock;var entries=props.entries;var onSave=props.onSave;var latest=props.latest||{};var isGuest=props.isGuest||false;var canMove=props.canMove!==false;var _search=useState('');var search=_search[0];var setSearch=_search[1];var _sel=useState(null);var sel=_sel[0];var setSel=_sel[1];var _qty=useState('');var qty=_qty[0];var setQty=_qty[1];var _lote=useState('');var lote=_lote[0];var setLote=_lote[1];var _val=useState('');var val=_val[0];var setVal=_val[1];var _obs=useState('');var obs=_obs[0];var setObs=_obs[1];var _err=useState('');var err=_err[0];var setErr=_err[1];var _warn=useState('');var warn=_warn[0];var setWarn=_warn[1];var _ok=useState('');var ok=_ok[0];var setOk=_ok[1];var _saving=useState(false);var saving=_saving[0];var setSaving=_saving[1];var _carrinho=useState([]);var carrinho=_carrinho[0];var setCarrinho=_carrinho[1];var _showCarrinho=useState(false);var showCarrinho=_showCarrinho[0];var setShowCarrinho=_showCarrinho[1];
+function TabSaida(props){var user=props.user;var medications=props.medications;var stock=props.stock;var entries=props.entries;var onSave=props.onSave;var latest=props.latest||{};var isGuest=props.isGuest||false;var canMove=props.canMove!==false;var confirm2=props.confirm2||function(t,m,fn){if(window.confirm(m))fn();};var alert2=props.alert2||function(m){window.alert(m);};var _search=useState('');var search=_search[0];var setSearch=_search[1];var _sel=useState(null);var sel=_sel[0];var setSel=_sel[1];var _qty=useState('');var qty=_qty[0];var setQty=_qty[1];var _lote=useState('');var lote=_lote[0];var setLote=_lote[1];var _val=useState('');var val=_val[0];var setVal=_val[1];var _obs=useState('');var obs=_obs[0];var setObs=_obs[1];var _err=useState('');var err=_err[0];var setErr=_err[1];var _warn=useState('');var warn=_warn[0];var setWarn=_warn[1];var _ok=useState('');var ok=_ok[0];var setOk=_ok[1];var _saving=useState(false);var saving=_saving[0];var setSaving=_saving[1];var _carrinho=useState([]);var carrinho=_carrinho[0];var setCarrinho=_carrinho[1];var _showCarrinho=useState(false);var showCarrinho=_showCarrinho[0];var setShowCarrinho=_showCarrinho[1];
 var inStock=medications.filter(function(m){return (stock[m.id]||0)>0;});var filtered=[];if(search.trim()){var s=search.toLowerCase();filtered=inStock.filter(function(m){return m.nome.toLowerCase().indexOf(s)>=0;}).slice(0,8);}var cur=sel?(stock[sel.id]||0):0;
 function adicionarCarrinho(){
     if(!sel){setErr('Selecione um medicamento.');return;}
@@ -340,7 +340,9 @@ function adicionarCarrinho(){
   }
   function confirmarCarrinho(){
     if(!carrinho.length)return;
-    if(!confirm('Confirmar saida de '+carrinho.length+' medicamento(s)?'))return;
+    confirm2('Confirmar saída','Registrar saída de '+carrinho.length+' medicamento(s) do estoque?',_confirmarCarrinhoExec,'danger','Confirmar');
+  }
+  function _confirmarCarrinhoExec(){
     setSaving(true);
     var erros=[];
     var idx=0;
@@ -447,7 +449,7 @@ return(
     </div>
   )}
 </div>);}
-function TabEntrada(props){var user=props.user;var medications=props.medications;var onSave=props.onSave;var isGuest=props.isGuest||false;var canMove=props.canMove!==false;var _modo=useState('individual');var modo=_modo[0];var setModo=_modo[1];var _search=useState('');var search=_search[0];var setSearch=_search[1];var _sel=useState(null);var sel=_sel[0];var setSel=_sel[1];var _newNome=useState('');var newNome=_newNome[0];var setNewNome=_newNome[1];var _newEan=useState('');var newEan=_newEan[0];var setNewEan=_newEan[1];var _creating=useState(false);var creating=_creating[0];var setCreating=_creating[1];var _showList=useState(false);var showList=_showList[0];var setShowList=_showList[1];var _qty=useState('');var qty=_qty[0];var setQty=_qty[1];var _lote=useState('');var lote=_lote[0];var setLote=_lote[1];var _val=useState('');var val=_val[0];var setVal=_val[1];var _obs=useState('');var obs=_obs[0];var setObs=_obs[1];var _err=useState('');var err=_err[0];var setErr=_err[1];var _ok=useState('');var ok=_ok[0];var setOk=_ok[1];var _saving=useState(false);var saving=_saving[0];var setSaving=_saving[1];var _filtEntrada=useState('todos');var filtEntrada=_filtEntrada[0];var setFiltEntrada=_filtEntrada[1];var _loteNota=useState('');var loteNota=_loteNota[0];var setLoteNota=_loteNota[1];var _valNota=useState('');var valNota=_valNota[0];var setValNota=_valNota[1];var _obsNota=useState('');var obsNota=_obsNota[0];var setObsNota=_obsNota[1];var _loteNotaReal=useState('');var loteNotaReal=_loteNotaReal[0];var setLoteNotaReal=_loteNotaReal[1];var _valNotaReal=useState('');var valNotaReal=_valNotaReal[0];var setValNotaReal=_valNotaReal[1];var _qtds=useState({});var qtds=_qtds[0];var setQtds=_qtds[1];var _salvandoNota=useState(false);var salvandoNota=_salvandoNota[0];var setSalvandoNota=_salvandoNota[1];
+function TabEntrada(props){var user=props.user;var medications=props.medications;var onSave=props.onSave;var isGuest=props.isGuest||false;var canMove=props.canMove!==false;var confirm2=props.confirm2||function(t,m,fn){if(window.confirm(m))fn();};var alert2=props.alert2||function(m){window.alert(m);};var _modo=useState('individual');var modo=_modo[0];var setModo=_modo[1];var _search=useState('');var search=_search[0];var setSearch=_search[1];var _sel=useState(null);var sel=_sel[0];var setSel=_sel[1];var _newNome=useState('');var newNome=_newNome[0];var setNewNome=_newNome[1];var _newEan=useState('');var newEan=_newEan[0];var setNewEan=_newEan[1];var _creating=useState(false);var creating=_creating[0];var setCreating=_creating[1];var _showList=useState(false);var showList=_showList[0];var setShowList=_showList[1];var _qty=useState('');var qty=_qty[0];var setQty=_qty[1];var _lote=useState('');var lote=_lote[0];var setLote=_lote[1];var _val=useState('');var val=_val[0];var setVal=_val[1];var _obs=useState('');var obs=_obs[0];var setObs=_obs[1];var _err=useState('');var err=_err[0];var setErr=_err[1];var _ok=useState('');var ok=_ok[0];var setOk=_ok[1];var _saving=useState(false);var saving=_saving[0];var setSaving=_saving[1];var _filtEntrada=useState('todos');var filtEntrada=_filtEntrada[0];var setFiltEntrada=_filtEntrada[1];var _loteNota=useState('');var loteNota=_loteNota[0];var setLoteNota=_loteNota[1];var _valNota=useState('');var valNota=_valNota[0];var setValNota=_valNota[1];var _obsNota=useState('');var obsNota=_obsNota[0];var setObsNota=_obsNota[1];var _loteNotaReal=useState('');var loteNotaReal=_loteNotaReal[0];var setLoteNotaReal=_loteNotaReal[1];var _valNotaReal=useState('');var valNotaReal=_valNotaReal[0];var setValNotaReal=_valNotaReal[1];var _qtds=useState({});var qtds=_qtds[0];var setQtds=_qtds[1];var _salvandoNota=useState(false);var salvandoNota=_salvandoNota[0];var setSalvandoNota=_salvandoNota[1];
 var _carrinhoNota=useState([]);var carrinhoNota=_carrinhoNota[0];var setCarrinhoNota=_carrinhoNota[1];
 var _editIdx=useState(null);var editIdx=_editIdx[0];var setEditIdx=_editIdx[1];
 var _showNovoMed=useState(false);var showNovoMed=_showNovoMed[0];var setShowNovoMed=_showNovoMed[1];
@@ -475,7 +477,7 @@ function save(){if(!sel){setErr('Selecione um medicamento.');return;}var q=parse
       if(exist>=0){var arr=prev.slice();arr[exist]=Object.assign({},arr[exist],{qty:arr[exist].qty+item.qty});return arr;}
       return prev.concat([item]);
     });
-    setSelNota(null);setSearchNota('');setQtyNota('');
+    setSelNota(null);setSearchNota('');setQtyNota('');setLoteNotaReal('');setValNotaReal('');
   }
 
   function cadastrarNovoMed(){
@@ -493,7 +495,9 @@ function save(){if(!sel){setErr('Selecione um medicamento.');return;}var q=parse
 
   function salvarCarrinhoNota(){
     if(!carrinhoNota.length)return;
-    if(!confirm('Confirmar entrada de '+carrinhoNota.length+' medicamento(s)?'))return;
+    confirm2('Confirmar entrada','Registrar entrada de '+carrinhoNota.length+' medicamento(s) no estoque?',_execSalvarCarrinhoNota,'success','Confirmar');
+  }
+  function _execSalvarCarrinhoNota(){
     setSalvandoNota(true);
     var nfNum=loteNota.trim();var nfForn=obsNota.trim();
     var obsTexto='NF'+(nfNum?' '+nfNum:'')+(nfForn?' - '+nfForn:'');
@@ -511,7 +515,7 @@ function save(){if(!sel){setErr('Selecione um medicamento.');return;}var q=parse
     next2();
   }
 
-  function salvarNota(){var itens=[];Object.keys(qtds).forEach(function(medId){var q=parseInt(qtds[medId])||0;if(q>0){var med=medications.find(function(m){return m.id===medId;});if(med)itens.push({med:med,qty:q});}});if(itens.length===0){setOkNota('Nenhuma quantidade informada.');return;}if(!confirm('Confirmar entrada de '+itens.length+' medicamento(s)?'))return;setSalvandoNota(true);var nfNum=loteNota.trim();var nfData=valNota.trim();var nfForn=obsNota.trim();var obsTexto='NF'+(nfNum?' '+nfNum:'')+(nfForn?' - '+nfForn:'');var idx=0;function next(){if(idx>=itens.length){playSound('success');setOkNota('Entrada de '+itens.length+' item(ns) registrada! NF: '+(nfNum||'sem numero'));setQtds({});setLoteNota('');setValNota('');setObsNota('');setLoteNotaReal('');setValNotaReal('');setSalvandoNota(false);setTimeout(function(){setOkNota('');},5000);return;}var item=itens[idx++];onSave({medicamentoId:item.med.id,medicamentoNome:item.med.nome,ean:item.med.ean||'',tipo:'entrada',quantidade:item.qty,lote:loteNotaReal.trim(),validade:valNotaReal.trim(),observacao:obsTexto,nfNumero:nfNum,nfData:nfData,nfFornecedor:nfForn}).then(next).catch(next);}next();}
+  function salvarNota(){var itens=[];Object.keys(qtds).forEach(function(medId){var q=parseInt(qtds[medId])||0;if(q>0){var med=medications.find(function(m){return m.id===medId;});if(med)itens.push({med:med,qty:q});}});if(itens.length===0){setOkNota('Nenhuma quantidade informada.');return;}confirm2('Confirmar entrada','Registrar entrada de '+itens.length+' medicamento(s) no estoque?',function(){_execSalvarNota();},'success','Confirmar');return;setSalvandoNota(true);var nfNum=loteNota.trim();var nfData=valNota.trim();var nfForn=obsNota.trim();var obsTexto='NF'+(nfNum?' '+nfNum:'')+(nfForn?' - '+nfForn:'');var idx=0;function next(){if(idx>=itens.length){playSound('success');setOkNota('Entrada de '+itens.length+' item(ns) registrada! NF: '+(nfNum||'sem numero'));setQtds({});setLoteNota('');setValNota('');setObsNota('');setLoteNotaReal('');setValNotaReal('');setSalvandoNota(false);setTimeout(function(){setOkNota('');},5000);return;}var item=itens[idx++];onSave({medicamentoId:item.med.id,medicamentoNome:item.med.nome,ean:item.med.ean||'',tipo:'entrada',quantidade:item.qty,lote:loteNotaReal.trim(),validade:valNotaReal.trim(),observacao:obsTexto,nfNumero:nfNum,nfData:nfData,nfFornecedor:nfForn}).then(next).catch(next);}next();}
 return(
 <div style={{maxWidth:700,margin:'0 auto',padding:'16px 14px'}}>
   <div className="tab-sw">
@@ -596,11 +600,7 @@ return(
             <div><Lbl c="Data da Nota"/><input type="date" value={valNota} onChange={function(e){setValNota(e.target.value);}} className="inp"/></div>
           </div>
           <div style={{marginBottom:14}}><Lbl c="Fornecedor (opcional)"/><input value={obsNota} onChange={function(e){setObsNota(e.target.value);}} placeholder="Ex: Distribuidora XYZ" className="inp"/></div>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:14}}>
-            <div><Lbl c="Lote (geral)"/><input value={loteNotaReal} onChange={function(e){setLoteNotaReal(e.target.value);}} placeholder="Ex: ABC1234" className="inp"/></div>
-            <div><Lbl c="Validade (geral)"/><input value={valNotaReal} onChange={function(e){setValNotaReal(e.target.value);}} placeholder="MM/AAAA" className="inp"/></div>
-          </div>
-          <Lbl c="Buscar medicamento"/>
+                    <Lbl c="Buscar medicamento"/>
           <div style={{position:'relative',marginBottom:8}}>
             <input value={searchNota} onChange={function(e){setSearchNota(e.target.value);setSelNota(null);}} placeholder="Digite o nome do medicamento..." className="inp" style={{marginBottom:0}}/>
             {filteredNota.length>0&&!selNota&&<div className="sdrop">
@@ -616,9 +616,19 @@ return(
             <div style={{fontWeight:700,fontSize:13,color:'#065F46'}}>{selNota.nome}</div>
             <button onClick={function(){setSelNota(null);setSearchNota('');}} style={{background:'none',border:'none',color:'#94A3B8',cursor:'pointer',fontSize:18}}>x</button>
           </div>}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+            <div><Lbl c="Lote *"/><input value={loteNotaReal} onChange={function(e){setLoteNotaReal(e.target.value);}} placeholder="Ex: ABC1234" className="inp" style={{borderColor:!loteNotaReal&&selNota?'#FCA5A5':''}}/></div>
+            <div><Lbl c="Validade *"/><input value={valNotaReal} onChange={function(e){setValNotaReal(e.target.value);}} placeholder="MM/AAAA" className="inp" style={{borderColor:!valNotaReal&&selNota?'#FCA5A5':''}}/></div>
+          </div>
           <div style={{display:'flex',gap:8,marginBottom:12}}>
-            <input value={qtyNota} onChange={function(e){setQtyNota(e.target.value.replace(/[^0-9]/g,''));}} placeholder="Qtd" style={{width:80,padding:'10px',borderRadius:8,border:'1.5px solid #E2E8F0',fontSize:15,fontWeight:800,textAlign:'center'}}/>
-            <button onClick={function(){adicionarAoCarrinhoNota(selNota,qtyNota);}} disabled={!selNota||!qtyNota} style={{flex:1,padding:'10px',background:(!selNota||!qtyNota)?'#E2E8F0':'#059669',color:(!selNota||!qtyNota)?'#94A3B8':'#fff',border:'none',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>+ Adicionar</button>
+            <input value={qtyNota} onChange={function(e){setQtyNota(e.target.value.replace(/[^0-9]/g,''));}} placeholder="Qtd *" style={{width:80,padding:'10px',borderRadius:8,border:'1.5px solid '+((!qtyNota&&selNota)?'#FCA5A5':'#E2E8F0'),fontSize:15,fontWeight:800,textAlign:'center'}}/>
+            <button onClick={function(){
+              if(!selNota)return;
+              if(!qtyNota||parseInt(qtyNota)<=0){alert2('Informe a quantidade!');return;}
+              if(!loteNotaReal.trim()){alert2('Informe o lote do medicamento!');return;}
+              if(!valNotaReal.trim()){alert2('Informe a validade do medicamento!');return;}
+              adicionarAoCarrinhoNota(selNota,qtyNota);
+            }} disabled={!selNota} style={{flex:1,padding:'10px',background:!selNota?'#E2E8F0':'#059669',color:!selNota?'#94A3B8':'#fff',border:'none',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>+ Adicionar</button>
             <button onClick={function(){setShowNovoMed(!showNovoMed);}} style={{padding:'10px 14px',background:'#EFF6FF',border:'1.5px solid #BFDBFE',borderRadius:8,color:'#1351B4',fontWeight:700,fontSize:12,cursor:'pointer'}}>+ Novo</button>
           </div>
         </div>
@@ -2069,7 +2079,63 @@ function TabAntibiotico({user,medications,stock}){
   );
 }
 
+function ModalConfirm({titulo,msg,onConfirm,onCancel,tipo,confirmTxt,cancelTxt}){
+  var cor=tipo==='danger'?'#DC2626':tipo==='warning'?'#D97706':'#059669';
+  var bg=tipo==='danger'?'#FEF2F2':tipo==='warning'?'#FFFBEB':'#F0FDF4';
+  var icon=tipo==='danger'?'🗑️':tipo==='warning'?'⚠️':'✅';
+  return(
+    <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.6)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={onCancel}>
+      <div style={{background:'#fff',borderRadius:20,padding:24,maxWidth:340,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}} onClick={function(e){e.stopPropagation();}}>
+        <div style={{textAlign:'center',marginBottom:16}}>
+          <div style={{width:56,height:56,borderRadius:16,background:bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 12px'}}>{icon}</div>
+          <div style={{fontWeight:800,fontSize:17,color:'#1E293B',marginBottom:6}}>{titulo}</div>
+          <div style={{fontSize:13,color:'#64748B',lineHeight:1.5}}>{msg}</div>
+        </div>
+        <div style={{display:'flex',gap:10,marginTop:20}}>
+          {onCancel&&<button onClick={onCancel} style={{flex:1,padding:'12px',background:'#F1F5F9',border:'none',borderRadius:12,fontWeight:700,fontSize:14,color:'#64748B',cursor:'pointer'}}>{cancelTxt||'Cancelar'}</button>}
+          <button onClick={onConfirm} style={{flex:1,padding:'12px',background:cor,border:'none',borderRadius:12,fontWeight:700,fontSize:14,color:'#fff',cursor:'pointer'}}>{confirmTxt||'Confirmar'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModalAlert({titulo,msg,onClose,tipo}){
+  var cor=tipo==='danger'?'#DC2626':tipo==='warning'?'#D97706':'#1351B4';
+  var bg=tipo==='danger'?'#FEF2F2':tipo==='warning'?'#FFFBEB':'#EFF6FF';
+  var icon=tipo==='danger'?'❌':tipo==='warning'?'⚠️':'ℹ️';
+  return(
+    <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.6)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={onClose}>
+      <div style={{background:'#fff',borderRadius:20,padding:24,maxWidth:320,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}} onClick={function(e){e.stopPropagation();}}>
+        <div style={{textAlign:'center',marginBottom:20}}>
+          <div style={{width:56,height:56,borderRadius:16,background:bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 12px'}}>{icon}</div>
+          <div style={{fontWeight:800,fontSize:17,color:'#1E293B',marginBottom:6}}>{titulo||'Atenção'}</div>
+          <div style={{fontSize:13,color:'#64748B',lineHeight:1.5}}>{msg}</div>
+        </div>
+        <button onClick={onClose} style={{width:'100%',padding:'12px',background:cor,border:'none',borderRadius:12,fontWeight:700,fontSize:14,color:'#fff',cursor:'pointer'}}>Entendido</button>
+      </div>
+    </div>
+  );
+}
+
+function useModal(){
+  var _modal=React.useState(null);var modal=_modal[0];var setModal=_modal[1];
+  function confirm2(titulo,msg,onConfirm,tipo,confirmTxt){
+    setModal({type:'confirm',titulo:titulo,msg:msg,onConfirm:function(){setModal(null);onConfirm();},onCancel:function(){setModal(null);},tipo:tipo,confirmTxt:confirmTxt});
+  }
+  function alert2(msg,titulo,tipo){
+    setModal({type:'alert',titulo:titulo||'Atenção',msg:msg,onClose:function(){setModal(null);},tipo:tipo||'warning'});
+  }
+  function ModalRender(){
+    if(!modal)return null;
+    if(modal.type==='confirm')return React.createElement(ModalConfirm,modal);
+    return React.createElement(ModalAlert,modal);
+  }
+  return {confirm2:confirm2,alert2:alert2,ModalRender:ModalRender,modal:modal};
+}
+
 function App(){
+var {confirm2,alert2,ModalRender,modal}=useModal();
 var _ready=useState(false);var ready=_ready[0];var setReady=_ready[1];var _user=useState(null);var user=_user[0];var setUser=_user[1];var _entries=useState([]);var entries=_entries[0];var setEntries=_entries[1];var _meds=useState([]);var meds=_meds[0];var setMeds=_meds[1];var _loading=useState(true);var loading=_loading[0];var setLoading=_loading[1];var _tab=useState('dashboard');var tab=_tab[0];var setTab=_tab[1];var _pending=useState(0);var pending=_pending[0];var setPending=_pending[1];var _alertCount=useState(0);var alertCount=_alertCount[0];var setAlertCount=_alertCount[1];var _solicitCount=useState(0);var solicitCount=_solicitCount[0];var setSolicitCount=_solicitCount[1];var _online=useState(navigator.onLine);var online=_online[0];var setOnline=_online[1];var _busca=useState(false);var busca=_busca[0];var setBusca=_busca[1];var _showSolicit=useState(false);var showSolicit=_showSolicit[0];var setShowSolicit=_showSolicit[1];var _showShift=useState(false);var showShift=_showShift[0];var setShowShift=_showShift[1];var _showShiftModal=useState(false);var showShiftModal=_showShiftModal[0];var setShowShiftModal=_showShiftModal[1];var _pendingInvite=useState(null);var pendingInvite=_pendingInvite[0];var setPendingInvite=_pendingInvite[1];var _plantao=useState(null);var plantao=_plantao[0];var setPlantao=_plantao[1];var _isGuest=useState(false);var isGuest=_isGuest[0];var setIsGuest=_isGuest[1];var _allUsers=useState([]);var allUsers=_allUsers[0];var setAllUsers=_allUsers[1];var _shiftChecked=useState(false);var shiftChecked=_shiftChecked[0];var setShiftChecked=_shiftChecked[1];var _shiftId=useState(null);var shiftId=_shiftId[0];var setShiftId=_shiftId[1];var _solicitacoesPlantao=useState([]);var solicitacoesPlantao=_solicitacoesPlantao[0];var setSolicitacoesPlantao=_solicitacoesPlantao[1];var lastAct=useRef(Date.now());
 useEffect(function(){var cfg=loadCfg();if(cfg&&initFB(cfg)){setReady(true);var saved=localStorage.getItem('fc_user');if(saved){try{setUser(JSON.parse(saved));}catch(e){}}auth.onAuthStateChanged(function(firebaseUser){if(firebaseUser&&!skipAuthCheck){db.collection('users').doc(firebaseUser.uid).get().then(function(s){if(s.exists){var d=s.data();if(d.status==='inativo'||d.status==='rejected'||d.status==='pending'){auth.signOut();localStorage.removeItem('fc_user');setUser(null);return;}var u={uid:firebaseUser.uid,name:d.name,role:d.role,color:d.color,email:d.email,status:d.status,sessionTimeout:d.sessionTimeout||12,photoURL:d.photoURL||'',crf:d.crf||''};localStorage.setItem('fc_user',JSON.stringify(u));setUser(u);}}).catch(function(){var s2=localStorage.getItem('fc_user');if(s2){try{setUser(JSON.parse(s2));}catch(e){}}});}});}},[] );
 useEffect(function(){function on(){setOnline(true);}function off(){setOnline(false);}window.addEventListener('online',on);window.addEventListener('offline',off);return function(){window.removeEventListener('online',on);window.removeEventListener('offline',off);};},[]);
@@ -2166,8 +2232,8 @@ return(
     ):(
       <div>
         {tab==='dashboard'&&<TabDashboard entries={entries} medications={meds} stock={stock} user={user} plantao={plantao} isGuest={isGuest} onSolicitar={function(){setShowSolicit(true);}} onEncerrar={encerrarPlantao} onSair={sairDoPlantao} onSolicitarEntrada={solicitarEntradaPlantao} shiftId={shiftId} onIniciar={function(){setShowShiftModal(true);}}/>}
-        {tab==='saida'&&<TabSaida user={user} medications={meds} stock={stock} entries={entries} onSave={addEntry} onSolicitar={addSolicitacao} latest={latest} isGuest={isGuest} canMove={canMove}/>}
-        {tab==='entrada'&&<TabEntrada user={user} medications={meds} onSave={addEntry} onSolicitar={addSolicitacao} isGuest={isGuest} canMove={canMove}/>}
+        {tab==='saida'&&<TabSaida user={user} medications={meds} stock={stock} entries={entries} onSave={addEntry} onSolicitar={addSolicitacao} latest={latest} isGuest={isGuest} canMove={canMove} confirm2={confirm2} alert2={alert2}/>}
+        {tab==='entrada'&&<TabEntrada user={user} medications={meds} onSave={addEntry} onSolicitar={addSolicitacao} isGuest={isGuest} canMove={canMove} confirm2={confirm2} alert2={alert2}/>}
         {tab==='estoque'&&<TabEstoque user={user} medications={meds} entries={entries} stock={stock}/>}
         {tab==='relatorio'&&can(user.role,'relatorio')&&<TabRelatorio entries={entries} medications={meds}/>}
         {tab==='gestao'&&can(user.role,'gestao')&&<TabGestao currentUser={user} entries={entries}/>}
@@ -2180,6 +2246,7 @@ return(
     )}
   </div>
   <SeletorAmbiente user={user}/>
+  <ModalRender/>
 
   <nav className="bnav">
     {navTabs.map(function(t){return(
