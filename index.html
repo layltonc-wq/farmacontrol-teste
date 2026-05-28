@@ -338,23 +338,27 @@ function adicionarCarrinho(){
     setSel(null);setSearch('');setQty('');setLote('');setVal('');setObs('');setWarn('');setErr('');
     setTimeout(function(){setOk('');},2000);
   }
-  async function confirmarCarrinho(){
+  function confirmarCarrinho(){
     if(!carrinho.length)return;
     if(!confirm('Confirmar saida de '+carrinho.length+' medicamento(s)?'))return;
     setSaving(true);
     var erros=[];
-    for(var i=0;i<carrinho.length;i++){
-      var item=carrinho[i];
+    var idx=0;
+    var items=carrinho.slice();
+    function next(){
+      if(idx>=items.length){
+        playSound('success');
+        setCarrinho([]);setShowCarrinho(false);setSaving(false);
+        setOk(erros.length?'Saidas com alertas: '+erros.join(', '):'Todas as saidas registradas!');
+        setTimeout(function(){setOk('');},5000);
+        return;
+      }
+      var item=items[idx++];
       var st=stock[item.medId]||0;
-      if(item.qty>st){erros.push(item.medNome+' sem estoque suficiente');continue;}
-      try{
-        await onSave({medicamentoId:item.medId,medicamentoNome:item.medNome,tipo:'saida',quantidade:item.qty,lote:item.lote,validade:item.validade,observacao:item.obs||''});
-      }catch(e){erros.push(item.medNome+': erro ao salvar');}
+      if(item.qty>st){erros.push(item.medNome+' sem estoque');next();return;}
+      onSave({medicamentoId:item.medId,medicamentoNome:item.medNome,tipo:'saida',quantidade:item.qty,lote:item.lote,validade:item.validade,observacao:item.obs||''}).then(next).catch(function(e){erros.push(item.medNome+': erro');next();});
     }
-    playSound('success');
-    setCarrinho([]);setShowCarrinho(false);setSaving(false);
-    setOk(erros.length?'Saidas registradas com alertas: '+erros.join(', '):'Todas as saidas registradas com sucesso!');
-    setTimeout(function(){setOk('');},5000);
+    next();
   }
   function save(){if(!sel){setErr('Selecione um medicamento.');return;}var q=parseInt(qty);if(!q||q<=0){setErr('Quantidade invalida.');return;}if(q>cur){setErr('Estoque insuficiente! Disponivel: '+cur+' un.');return;}if(q>cur*0.7&&!warn){setWarn('Saida alta: '+q+' de '+cur+' un. disponivel. Confirme clicando novamente.');return;}setSaving(true);setErr('');setWarn('');var lt=lote||(latest[sel.id]?latest[sel.id].lote:'')||'';var vl=val||(latest[sel.id]?latest[sel.id].validade:'')||'';var data={medicamentoId:sel.id,medicamentoNome:sel.nome,ean:sel.ean||'',tipo:'saida',quantidade:q,lote:lt.trim(),validade:vl.trim(),observacao:obs.trim()};var saveFn=(!canMove&&isGuest&&props.onSolicitar)?props.onSolicitar:onSave;saveFn(data).then(function(){if(q>500)db.collection('alertas').add({tipo:'saida_excessiva',medicamentoNome:sel.nome,quantidade:q,estoqueAntes:cur,autorNome:user.name,criadoEm:new Date().toISOString(),lido:false}).catch(function(){});playSound('success');setOk((!canMove&&isGuest)?'Solicitacao enviada!':'Saida de '+q+'x '+sel.nome+' registrada!');setQty('');setLote('');setVal('');setObs('');setWarn('');setTimeout(function(){setOk('');},4000);setSaving(false);}).catch(function(e){setErr('Erro: '+(e.message||'tente novamente'));setSaving(false);});}
 var last10=entries.filter(function(e){return e.tipo==='saida';}).slice(-10).reverse();
@@ -705,10 +709,14 @@ function TabAdmin({user,entries,medications,db}){
   var _busca=sl('');var busca=_busca[0];var setBusca=_busca[1];
   var _tratamentos=sl([]);var tratamentos=_tratamentos[0];var setTratamentos=_tratamentos[1];
   var _logs=sl([]);var logs=_logs[0];var setLogs=_logs[1];
+  var _histcontas=sl([]);var histcontas=_histcontas[0];var setHistcontas=_histcontas[1];
+  var _logAcesso=sl([]);var logAcesso=_logAcesso[0];var setLogAcesso=_logAcesso[1];
 
   ef(function(){
     var u1=db.collection('tratamentos_atb').orderBy('criadoEm','desc').limit(50).onSnapshot(function(sn){setTratamentos(sn.docs.map(function(d){return Object.assign({id:d.id},d.data());}));});
     var u2=db.collection('entries').orderBy('criadoEm','desc').limit(100).onSnapshot(function(sn){setLogs(sn.docs.map(function(d){return Object.assign({id:d.id},d.data());}));});
+    var u3=db.collection('logs_contas').orderBy('criadoEm','desc').limit(100).onSnapshot(function(sn){setHistcontas(sn.docs.map(function(d){return Object.assign({id:d.id},d.data());}));}).catch?db.collection('logs_contas').orderBy('criadoEm','desc').limit(100).onSnapshot(function(sn){setHistcontas(sn.docs.map(function(d){return Object.assign({id:d.id},d.data());}));}):function(){};
+    var u4=db.collection('logs_acesso').orderBy('criadoEm','desc').limit(100).onSnapshot(function(sn){setLogAcesso(sn.docs.map(function(d){return Object.assign({id:d.id},d.data());}));},function(){});
     return function(){u1();u2();};
   },[]);
 
@@ -730,7 +738,7 @@ function TabAdmin({user,entries,medications,db}){
     } else {setConfirmId(id);setTimeout(function(){setConfirmId('');},4000);}
   }
 
-  var subItems=[['entradas','📥 Entradas'],['saidas','💊 Saídas'],['medicamentos','💉 Medicamentos'],['atb','🧬 ATB'],];
+  var subItems=[['entradas','📥 Entradas'],['saidas','💊 Saídas'],['medicamentos','💉 Medicamentos'],['atb','🧬 ATB'],['histcontas','📋 Hist. Contas'],['log','🔐 Log Acesso']];
 
   var entradasFilt=logs.filter(function(e){return e.tipo==='entrada'&&(!busca||(e.medicamentoNome||'').toLowerCase().includes(busca.toLowerCase()));});
   var saidasFilt=logs.filter(function(e){return e.tipo==='saida'&&(!busca||(e.medicamentoNome||'').toLowerCase().includes(busca.toLowerCase()));});
@@ -805,6 +813,32 @@ function TabAdmin({user,entries,medications,db}){
               <div style={{fontSize:11,color:'#64748B',marginTop:2}}>{t.medicamentoNome||'--'} · {t.status||'--'} · {t.criadoPor||'?'}</div>
             </div>
             <BtnDel col="tratamentos_atb" id={t.id} nome={t.pacienteNome}/>
+          </div>
+        );})}
+      </div>}
+
+      {sub==='histcontas'&&<div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {histcontas.length===0&&<div style={{textAlign:'center',color:'#94A3B8',padding:20}}>Nenhum registro encontrado</div>}
+        {histcontas.filter(function(h){return !busca||(h.nome||'').toLowerCase().includes(busca.toLowerCase());}).map(function(h){return(
+          <div key={h.id} style={{background:'#fff',borderRadius:12,padding:'12px 14px',boxShadow:'0 1px 6px rgba(0,0,0,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,fontSize:13,color:'#1E293B'}}>{h.nome||'--'}</div>
+              <div style={{fontSize:11,color:'#64748B',marginTop:2}}>{h.acao||'--'} · {h.por||'?'} · {h.criadoEm?new Date(h.criadoEm).toLocaleString('pt-BR'):''}</div>
+            </div>
+            <BtnDel col="logs_contas" id={h.id} nome={h.nome||'registro'}/>
+          </div>
+        );})}
+      </div>}
+
+      {sub==='log'&&<div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {logAcesso.length===0&&<div style={{textAlign:'center',color:'#94A3B8',padding:20}}>Nenhum log encontrado</div>}
+        {logAcesso.filter(function(l){return !busca||(l.nome||l.userName||'').toLowerCase().includes(busca.toLowerCase());}).map(function(l){return(
+          <div key={l.id} style={{background:'#fff',borderRadius:12,padding:'12px 14px',boxShadow:'0 1px 6px rgba(0,0,0,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,fontSize:13,color:'#1E293B'}}>{l.nome||l.userName||'--'}</div>
+              <div style={{fontSize:11,color:'#64748B',marginTop:2}}>{l.acao||l.tipo||'acesso'} · {l.criadoEm?new Date(l.criadoEm).toLocaleString('pt-BR'):''}</div>
+            </div>
+            <BtnDel col="logs_acesso" id={l.id} nome={l.nome||'log'}/>
           </div>
         );})}
       </div>}
