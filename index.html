@@ -731,6 +731,10 @@ function HistModal(props){
   var med=props.med;var entries=props.entries;var onClose=props.onClose;var user=props.user;
   var _aba=useState('lotes');var aba=_aba[0];var setAba=_aba[1];
   var _editLote=useState(null);var editLote=_editLote[0];var setEditLote=_editLote[1];
+  var _showAtribuir=useState(false);var showAtribuir=_showAtribuir[0];var setShowAtribuir=_showAtribuir[1];
+  var _atribLote=useState('');var atribLote=_atribLote[0];var setAtribLote=_atribLote[1];
+  var _atribVal=useState('');var atribVal=_atribVal[0];var setAtribVal=_atribVal[1];
+  var _atribQty=useState('');var atribQty=_atribQty[0];var setAtribQty=_atribQty[1];
   var _novoLote=useState('');var novoLote=_novoLote[0];var setNovoLote=_novoLote[1];
   var _novaVal=useState('');var novaVal=_novaVal[0];var setNovaVal=_novaVal[1];
   var _ajusteQty=useState('');var ajusteQty=_ajusteQty[0];var setAjusteQty=_ajusteQty[1];
@@ -743,7 +747,22 @@ function HistModal(props){
   entries.filter(function(e){return e.medicamentoId===med.id&&e.tipo==='entrada'&&e.lote;}).forEach(function(e){var lk=e.lote;if(!loteMap[lk])loteMap[lk]={lote:e.lote,validade:e.validade||'',entrada:0,saida:0};loteMap[lk].entrada+=(e.quantidade||0);});
   entries.filter(function(e){return e.medicamentoId===med.id&&e.tipo==='saida'&&e.lote;}).forEach(function(e){var lk=e.lote;if(loteMap[lk])loteMap[lk].saida+=(e.quantidade||0);});
   var lotes=Object.keys(loteMap).map(function(k){var l=loteMap[k];var qty=Math.max(0,l.entrada-l.saida);var hoje=new Date();var dias=null;if(l.validade){var p=l.validade.split('/');if(p.length===2){var d=new Date(parseInt(p[1]),parseInt(p[0])-1,1);dias=Math.ceil((d-hoje)/86400000);}}return Object.assign({},l,{qty:qty,dias:dias});}).filter(function(l){return l.qty>0;}).sort(function(a,b){return a.dias!==null&&b.dias!==null?a.dias-b.dias:0;});
+  // Calcular estoque sem lote
+  var entSemLote=entries.filter(function(e){return e.medicamentoId===med.id&&e.tipo==='entrada'&&!e.lote;}).reduce(function(s,e){return s+(e.quantidade||0);},0);
+  var saiSemLote=entries.filter(function(e){return e.medicamentoId===med.id&&e.tipo==='saida'&&!e.lote;}).reduce(function(s,e){return s+(e.quantidade||0);},0);
+  var qtdSemLote=Math.max(0,entSemLote-saiSemLote);
 
+  function atribuirLote(){
+    if(!atribLote.trim()||!atribVal.trim()||!atribQty)return;
+    var qty=parseInt(atribQty);if(!qty||qty<=0)return;
+    if(qty>qtdSemLote){alert('Quantidade maior que o disponível sem lote!');return;}
+    // Cria entrada com lote/validade + saida sem lote (saldo zero, reclassifica)
+    var now=new Date().toISOString();
+    Promise.all([
+      db.collection('entries').add({medicamentoId:med.id,medicamentoNome:med.nome,tipo:'entrada',quantidade:qty,lote:atribLote.trim(),validade:atribVal.trim(),autorNome:user.name,autorId:user.uid||'',observacao:'Atribuição de lote',criadoEm:now}),
+      db.collection('entries').add({medicamentoId:med.id,medicamentoNome:med.nome,tipo:'saida',quantidade:qty,lote:'',validade:'',autorNome:user.name,autorId:user.uid||'',observacao:'Atribuição de lote (reclassificação)',criadoEm:now})
+    ]).then(function(){setShowAtribuir(false);setAtribLote('');setAtribVal('');setAtribQty('');}).catch(function(e){alert('Erro: '+e.message);});
+  }
   function salvarEdicaoLote(){
     if(!editLote)return;
     var entsDoLote=entries.filter(function(e){return e.medicamentoId===med.id&&e.tipo==='entrada'&&e.lote===editLote.lote;});
@@ -779,7 +798,34 @@ function HistModal(props){
     </div>
 
     {aba==='lotes'&&<div>
-      {lotes.length===0
+      {qtdSemLote>0&&<div style={{background:'#F8FAFC',borderRadius:12,padding:'12px 14px',marginBottom:8,border:'1.5px dashed #CBD5E1'}}>
+        {showAtribuir
+          ?<div>
+            <div style={{fontWeight:700,fontSize:13,color:'#1E293B',marginBottom:10}}>🏷️ Atribuir lote a unidades sem lote</div>
+            <div style={{fontSize:12,color:'#64748B',marginBottom:8}}>Disponível sem lote: <strong>{qtdSemLote} un.</strong></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+              <div><div style={{fontSize:10,color:'#64748B',fontWeight:600,marginBottom:2}}>LOTE *</div><input value={atribLote} onChange={function(e){setAtribLote(e.target.value);}} placeholder="Ex: ABC123" style={{width:'100%',padding:'8px',borderRadius:7,border:'1.5px solid #1351B4',fontSize:13,boxSizing:'border-box'}}/></div>
+              <div><div style={{fontSize:10,color:'#64748B',fontWeight:600,marginBottom:2}}>VALIDADE *</div><input value={atribVal} onChange={function(e){setAtribVal(e.target.value);}} placeholder="MM/AAAA" style={{width:'100%',padding:'8px',borderRadius:7,border:'1.5px solid #1351B4',fontSize:13,boxSizing:'border-box'}}/></div>
+            </div>
+            <div style={{marginBottom:8}}>
+              <div style={{fontSize:10,color:'#64748B',fontWeight:600,marginBottom:2}}>QUANTIDADE * (máx: {qtdSemLote})</div>
+              <input value={atribQty} onChange={function(e){var v=e.target.value.replace(/[^0-9]/g,'');if(parseInt(v)>qtdSemLote)v=String(qtdSemLote);setAtribQty(v);}} placeholder={'Ex: '+qtdSemLote} style={{width:'100%',padding:'8px',borderRadius:7,border:'1.5px solid #1351B4',fontSize:18,fontWeight:800,textAlign:'center',boxSizing:'border-box'}}/>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={function(){setShowAtribuir(false);setAtribLote('');setAtribVal('');setAtribQty('');}} style={{flex:1,padding:'8px',background:'#F1F5F9',border:'none',borderRadius:8,fontWeight:600,fontSize:12,cursor:'pointer'}}>Cancelar</button>
+              <button onClick={atribuirLote} disabled={!atribLote.trim()||!atribVal.trim()||!atribQty} style={{flex:2,padding:'8px',background:(!atribLote.trim()||!atribVal.trim()||!atribQty)?'#E2E8F0':'#1351B4',border:'none',borderRadius:8,color:(!atribLote.trim()||!atribVal.trim()||!atribQty)?'#94A3B8':'#fff',fontWeight:700,fontSize:12,cursor:'pointer'}}>✅ Confirmar atribuição</button>
+            </div>
+          </div>
+          :<div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div>
+              <div style={{fontWeight:700,fontSize:14,color:'#64748B'}}>Sem lote registrado</div>
+              <div style={{fontSize:12,color:'#94A3B8',marginTop:2}}>{qtdSemLote} un. sem lote/validade</div>
+            </div>
+            <button onClick={function(){setShowAtribuir(true);}} style={{background:'#1351B4',border:'none',borderRadius:8,padding:'7px 12px',color:'#fff',fontWeight:700,fontSize:12,cursor:'pointer'}}>🏷️ Atribuir lote</button>
+          </div>
+        }
+      </div>}
+      {lotes.length===0&&qtdSemLote===0
         ?<div style={{textAlign:'center',padding:32,color:'#94A3B8'}}>Nenhum lote com estoque disponível</div>
         :lotes.map(function(l,i){
           var vencido=l.dias!==null&&l.dias<0;
