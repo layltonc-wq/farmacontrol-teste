@@ -1096,7 +1096,31 @@ return(
       <button onClick={function(){setDarkMode(false);localStorage.setItem('fc_theme','light');document.body.classList.remove('dark');}} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:!darkMode?'#fff':'transparent',fontWeight:!darkMode?700:500,fontSize:13,color:!darkMode?'#1351B4':'#64748B',cursor:'pointer',boxShadow:!darkMode?'0 1px 4px rgba(0,0,0,0.08)':'none',transition:'all .2s'}}>☀️ Claro</button>
       <button onClick={function(){setDarkMode(true);localStorage.setItem('fc_theme','dark');document.body.classList.add('dark');}} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:darkMode?'#1E293B':'transparent',fontWeight:darkMode?700:500,fontSize:13,color:darkMode?'#60A5FA':'#64748B',cursor:'pointer',boxShadow:darkMode?'0 2px 8px rgba(0,0,0,0.2)':'none',transition:'all .2s'}}>🌙 Escuro</button>
     </div>
-    <Lbl c="Tempo de sessao automatica"/>
+    <div className="card" style={{marginBottom:14,padding:'16px 18px'}}>
+    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+      <div style={{width:36,height:36,borderRadius:10,background:'linear-gradient(135deg,#059669,#047857)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>📋</div>
+      <div style={{fontWeight:700,fontSize:15,color:'#1E293B'}}>Meus Últimos Registros</div>
+    </div>
+    {(function(){
+      var meus=(entries||[]).filter(function(e){return e.autorId===user.uid||e.autorNome===user.name;}).sort(function(a,b){return (b.criadoEm||'').localeCompare(a.criadoEm||'');}).slice(0,5);
+      if(!meus.length)return <div style={{textAlign:'center',color:'#94A3B8',fontSize:13,padding:'12px 0'}}>Nenhum registro ainda</div>;
+      return <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        {meus.map(function(e,i){return(
+          <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 12px',background:e.tipo==='entrada'?'#F0FDF4':'#FEF2F2',borderRadius:10,border:'1px solid '+(e.tipo==='entrada'?'#BBF7D0':'#FECACA')}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:16}}>{e.tipo==='entrada'?'📥':'💊'}</span>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:'#1E293B'}}>{e.medicamentoNome}</div>
+                <div style={{fontSize:10,color:'#64748B'}}>{e.tipo==='entrada'?'+':'-'}{e.quantidade} un.</div>
+              </div>
+            </div>
+            <div style={{fontSize:10,color:'#94A3B8',textAlign:'right'}}>{fmtD(e.criadoEm)}</div>
+          </div>
+        );})}
+      </div>;
+    })()}
+  </div>
+  <Lbl c="Tempo de sessao automatica"/>
     <select value={sessionH} onChange={function(e){setSessionH(e.target.value);}} className="inp">
       {[4,8,12,24,48,168].map(function(h){var label=h<24?(h+' hora'+(h>1?'s':'')):(h===24?'1 dia':(h===48?'2 dias':'1 semana'));return <option key={h} value={h}>{label}</option>;})}
     </select>
@@ -1698,7 +1722,7 @@ function TabNotas({user,medications}){
 }
 
 
-function TabAntibiotico({user,medications,stock}){
+function TabAntibiotico({user,medications,stock,allUsers}){
   var sl=React.useState,ef=React.useEffect,B='#1351B4';
   var _tr=sl([]);var tratamentos=_tr[0];var setTratamentos=_tr[1];
   var _ld=sl(true);var loading=_ld[0];var setLoading=_ld[1];
@@ -1888,7 +1912,13 @@ function TabAntibiotico({user,medications,stock}){
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:15,color:'#1E293B'}}>{t.pacienteNome}</div>
                   {(t.nomeMedico||t.crmMedico)&&<div style={{fontSize:11,color:'#64748B',marginTop:2}}>👨‍⚕️ {t.nomeMedico}{t.crmMedico?' · CRM: '+t.crmMedico:''}</div>}
-                  {t.criadoPor&&<div style={{fontSize:11,color:'#94A3B8',marginTop:2}}>📋 Cadastrado por: <span style={{fontWeight:600,color:'#64748B'}}>{t.criadoPor}</span></div>}
+                  {t.criadoPor&&(function(){
+                    var uCriador=(allUsers||[]).find(function(u){return u.name===t.criadoPor;});
+                    return <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
+                      {uCriador?<UserAvatar user={uCriador} size={18}/>:<div style={{width:18,height:18,borderRadius:'50%',background:'#E2E8F0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#64748B'}}>{t.criadoPor.charAt(0)}</div>}
+                      <div style={{fontSize:11,color:'#94A3B8'}}>Cadastrado por <span style={{fontWeight:600,color:'#64748B'}}>{t.criadoPor}</span></div>
+                    </div>;
+                  })()}
                   {s==='espera'&&<div style={{fontSize:11,fontWeight:600,marginTop:2,color:de>=3?'#DC2626':de>=2?'#D97706':'#D97706'}}>{de>=3?'🚨 '+de+' dias - PRAZO VENCIDO!':'⏳ Dia '+de+' de 3 em espera'}</div>}
                   {s==='dose_ataque'&&<div style={{fontSize:11,fontWeight:600,marginTop:2,color:'#7C3AED'}}>⚡ {t.doseAtaqueRegistradoPor||'—'} · {t.doseAtaqueData?fD(t.doseAtaqueData):''}{t.doseAtaqueHora?' as '+t.doseAtaqueHora:''}</div>}
                   {s!=='espera'&&s!=='dose_ataque'&&total>0&&<div style={{fontSize:11,color:'#94A3B8',marginTop:2}}>Inicio: {fD(t.dataInicio)} · {total} dias</div>}
@@ -2349,7 +2379,7 @@ return(
         {tab==='gestao'&&can(user.role,'gestao')&&<TabGestao currentUser={user} entries={entries}/>}
         {tab==='log'&&can(user.role,'log')&&<TabLog/>}
         {tab==='histcontas'&&can(user.role,'log')&&<TabHistContas/>}
-        {tab==='antibiotico'&&<TabAntibiotico user={user} medications={meds} stock={stock}/>}
+        {tab==='antibiotico'&&<TabAntibiotico user={user} medications={meds} stock={stock} allUsers={allUsers}/>}
         {tab==='admin'&&user.role==='tecnico'&&<TabAdmin user={user} entries={entries} medications={meds} db={db}/>}
         {tab==='perfil'&&<TabPerfil user={user} onUpdate={function(u){setUser(u);}} onLogout={logout} entries={entries} medications={meds} stock={stock}/>}
       </div>
