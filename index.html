@@ -190,7 +190,7 @@ var useState=React.useState,useEffect=React.useEffect,useRef=React.useRef,useMem
 var B='#1351B4',CFG_KEY='mt_firebase_cfg_permanent',db=null,auth=null,skipAuthCheck=false;
 var ROLES={gestor:'Gestor',farmaceutico:'Farmacêutico',auxiliar:'Auxiliar',tecnico:'Técnico',diarista:'Diarista'};
 var ROLE_ICON={gestor:'🏥',farmaceutico:'⚗️',tecnico:'🔧',auxiliar:'💊',diarista:'📋'};
-var PERMS={gestor:['saida','entrada','estoque','relatorio','gestao','perfil','editar','historico','log'],farmaceutico:['saida','entrada','estoque','perfil'],auxiliar:['saida','entrada','estoque','perfil'],tecnico:['saida','entrada','estoque','relatorio','gestao','perfil','editar','historico','log'],diarista:['saida','entrada','estoque','perfil']};
+var PERMS={gestor:['saida','entrada','estoque','relatorio','gestao','perfil','editar','historico','log'],farmaceutico:['saida','entrada','estoque','perfil','historico'],auxiliar:['saida','entrada','estoque','perfil','historico'],tecnico:['saida','entrada','estoque','relatorio','gestao','perfil','editar','historico','log'],diarista:['saida','entrada','estoque','perfil','historico']};
 var PALETTE=['#1351B4','#0C7B4A','#D32F2F','#7B1FA2','#E65100','#00838F','#558B2F','#AD1457','#1565C0','#2E7D32','#6A1B9A','#0277BD'];
 var TIPOS={medicamento:{label:'Farm. Básica',icon:'💊',cor:'#1351B4'},controlado:{label:'Controlado',icon:'🔵',cor:'#DC2626'},injetável:{label:'Injetável',icon:'💉',cor:'#7C3AED'},leite:{label:'Leite',icon:'🍼',cor:'#D97706'},penso:{label:'Penso/Material',icon:'🩹',cor:'#0891B2'}};
 function can(role,a){return (PERMS[role]||[]).indexOf(a)>=0;}
@@ -235,7 +235,7 @@ function Auth(props){
   var EM={'auth/user-not-found':'Usuario não encontrado.','auth/wrong-password':'Senha incorreta.','auth/invalid-credential':'Email ou senha incorretos.','auth/email-already-in-use':'Email ja cadastrado.','auth/weak-password':'Senha min. 6 caracteres.'};
   function login(){if(!email||!pass){setErr('Preencha email e senha.');return;}setLoad(true);setErr('');auth.signInWithEmailAndPassword(email,pass).then(function(c){return db.collection('users').doc(c.user.uid).get().then(function(s){if(!s.exists){setErr('Usuario não encontrado.');auth.signOut();setLoad(false);return;}var d=s.data();if(d.status==='pending'){setErr('Aguardando aprovação.');auth.signOut();setLoad(false);return;}if(d.status==='rejected'||d.status==='inativo'){setErr('Conta não ativa.');auth.signOut();setLoad(false);return;}var u={uid:c.user.uid,name:d.name,role:d.role,color:d.color,email:d.email,status:d.status,sessionTimeout:d.sessionTimeout||12,photoURL:d.photoURL||'',crf:d.crf||''};localStorage.setItem('fc_user',JSON.stringify(u));db.collection('logs_acesso').add({uid:u.uid,nome:u.name,cargo:u.role,acao:'login',criadoEm:new Date().toISOString()}).catch(function(){});props.onLogin(u);});}).catch(function(e){setErr(EM[e.code]||e.message);setLoad(false);});}
   function register(){if(!name||!email||!pass){setErr('Preencha todos os campos.');return;}if(pass.length<6){setErr('Senha min. 6 caracteres.');return;}setLoad(true);setErr('');skipAuthCheck=true;db.collection('users').limit(1).get().then(function(ex){var isFirst=ex.empty;auth.createUserWithEmailAndPassword(email,pass).then(function(c){
-      return c.user.getIdToken(true).then(function(){return new Promise(function(res){setTimeout(function(){res(c);},500);});});}).then(function(c){var ud={name:name,role:isFirst?'gestor':role,color:color,email:email,status:isFirst?'approved':'pending',criadoEm:new Date().toISOString(),sessionTimeout:12,photoURL:'',crf:role==='farmaceutico'?crf.trim():''};db.collection('users').doc(c.user.uid).set(ud).then(function(){skipAuthCheck=false;if(isFirst){var u={uid:c.user.uid,name:ud.name,role:ud.role,color:ud.color,email:ud.email,status:ud.status,sessionTimeout:12,photoURL:'',crf:''};localStorage.setItem('fc_user',JSON.stringify(u));props.onLogin(u);}else{auth.signOut().catch(function(){});setErr('Conta criada! Aguarde aprovação do Técnico.');setMode('login');setLoad(false);}}).catch(function(e){skipAuthCheck=false;setErr(e.message);setLoad(false);});}).catch(function(e){skipAuthCheck=false;setErr(EM[e.code]||e.message);setLoad(false);});}).catch(function(e){skipAuthCheck=false;setErr(e.message);setLoad(false);});}
+      return c.user.getIdToken(true).then(function(){return new Promise(function(res){setTimeout(function(){res(c);},1500);});});}).then(function(c){var ud={name:name,role:isFirst?'gestor':role,color:color,email:email,status:isFirst?'approved':'pending',criadoEm:new Date().toISOString(),sessionTimeout:12,photoURL:'',crf:role==='farmaceutico'?crf.trim():''};db.collection('users').doc(c.user.uid).set(ud).then(function(){skipAuthCheck=false;if(isFirst){var u={uid:c.user.uid,name:ud.name,role:ud.role,color:ud.color,email:ud.email,status:ud.status,sessionTimeout:12,photoURL:'',crf:''};localStorage.setItem('fc_user',JSON.stringify(u));props.onLogin(u);}else{auth.signOut().catch(function(){});setErr('Conta criada! Aguarde aprovação do Técnico.');setMode('login');setLoad(false);}}).catch(function(e){skipAuthCheck=false;setErr(e.message);setLoad(false);});}).catch(function(e){skipAuthCheck=false;setErr(EM[e.code]||e.message);setLoad(false);});}).catch(function(e){skipAuthCheck=false;setErr(e.message);setLoad(false);});}
   return(
     <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#0D1B4B 0%,#1351B4 55%,#1A6FD4 100%)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:16,position:'relative',overflow:'hidden'}}>
       <div style={{position:'absolute',width:320,height:320,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.05)',top:-100,right:-100}}/>
@@ -943,7 +943,7 @@ var venc30=[],venc60=[],venc90=[],vencidos=[];medList.forEach(function(m){
     venc90.push({id:m.id,nome:m.nome,validade:'',lote:'',est:semLote,dias:null,semLote:true});
   }
 });
-var faltas=medList.filter(function(m){return m.minEstoque>0&&m.est<=m.minEstoque;});var zerados=medList.filter(function(m){return m.minEstoque>0&&m.est<=0;});var baixos=medList.filter(function(m){return m.minEstoque>0&&m.est>0&&m.est<=m.minEstoque;});var totalAlertas=vencidos.length+venc30.length+faltas.length;
+var faltas=medList.filter(function(m){return m.minEstoque>0&&m.est<=m.minEstoque;});var zerados=medList.filter(function(m){return m.minEstoque>0&&m.est<=0;});var baixos=medList.filter(function(m){return m.minEstoque>0&&m.est>0&&m.est<=m.minEstoque;});var totalAlertas=vencidos.length+venc30.length+venc60.length+venc90.filter(function(m){return !m.semLote;}).length+faltas.length;
 function exportXL(){var rows=[['Tipo','Medicamento','EAN','Estoque','Lote','Validade','Minimo']];medList.forEach(function(m){var t=TIPOS[m.cat]||TIPOS.medicamento;rows.push([t.label,m.nome,m.ean||'',m.est,m.info.lote||'',m.info.validade||'',m.minEstoque||0]);});var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Estoque');XLSX.writeFile(wb,'estoque_'+todayStr()+'.xlsx');}
 function exportAlertasXL(){var rows=[['Tipo','Medicamento','Estoque','Min','Validade','Lote','Dias']];vencidos.forEach(function(m){rows.push(['VENCIDO',m.nome,m.est,'',m.validade,m.lote,m.dias]);});venc30.forEach(function(m){rows.push(['Vence 30d',m.nome,m.est,'',m.validade,m.lote,m.dias]);});zerados.forEach(function(m){rows.push(['Zerado',m.nome,m.est,m.minEstoque,'','',0]);});baixos.forEach(function(m){rows.push(['Baixo',m.nome,m.est,m.minEstoque,'','',0]);});var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Alertas');XLSX.writeFile(wb,'alertas_'+todayStr()+'.xlsx');}
 function saveNew(){if(!newNome.trim())return;setSaving(true);db.collection('medicamentos').add({nome:newNome.trim(),ean:newEan.trim(),minEstoque:parseInt(newMin)||0,categoria:newTipo,criadoEm:new Date().toISOString()}).then(function(){setShowAdd(false);setNewNome('');setNewEan('');setNewMin('');setNewTipo('medicamento');setSaving(false);});}
@@ -1044,23 +1044,23 @@ function doXL(){var rows=[['Data','Hora','Responsavel','Medicamento','Tipo','Qtd
 return(<div style={{maxWidth:900,margin:'0 auto',padding:'16px 14px'}}>
 <div className="tab-sw">{[['mov','Movimentações'],['resp','Por Responsável'],['rank','Ranking']].map(function(t){return <button key={t[0]} onClick={function(){setSub(t[0]);}} className={sub===t[0]?'on':''}>{t[1]}</button>;})}</div>
 {sub==='mov'&&<div>
-  <div className="card" style={{marginBottom:12}}>
-    <div style={{display:'flex',flexWrap:'wrap',gap:8,padding:14}}>
-      <input value={busca} onChange={function(e){setBusca(e.target.value);}} placeholder="Buscar medicamento..." className="inp" style={{flex:1,minWidth:160,margin:0}}/>
-      <select value={filtTipo} onChange={function(e){setFiltTipo(e.target.value);}} className="inp" style={{flex:'0 0 auto',margin:0}}>
-        <option value="">Todos</option>
-        <option value="saida">Saídas</option>
-        <option value="entrada">Entradas</option>
-      </select>
+  <div className="card" style={{marginBottom:12,padding:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+      <div><div style={{fontSize:10,color:'#94A3B8',fontWeight:700,marginBottom:4}}>DE</div><input type="date" value={dF} onChange={function(e){setDF(e.target.value);}} className="inp" style={{margin:0}}/></div>
+      <div><div style={{fontSize:10,color:'#94A3B8',fontWeight:700,marginBottom:4}}>ATÉ</div><input type="date" value={dT} onChange={function(e){setDT(e.target.value);}} className="inp" style={{margin:0}}/></div>
     </div>
+    <select value={tipo} onChange={function(e){setTipo(e.target.value);}} className="inp" style={{margin:0}}>
+      <option value="todos">Todos os tipos</option>
+      <option value="saida">Saídas</option>
+      <option value="entrada">Entradas</option>
+    </select>
   </div>
-  <div className="card" style={{marginBottom:12}}>
-    <div style={{padding:14,display:'flex',gap:10,flexWrap:'wrap'}}>
-      {[['7','7 dias'],['30','30 dias'],['90','90 dias'],['','Tudo']].map(function(p){return <button key={p[0]} onClick={function(){setPeriodo(p[0]);}} style={{padding:'7px 14px',borderRadius:20,border:'none',background:periodo===p[0]?'#1351B4':'#F1F5F9',color:periodo===p[0]?'#fff':'#64748B',fontWeight:periodo===p[0]?700:500,fontSize:12,cursor:'pointer'}}>{p[1]}</button>;})}
-    </div>
+  <div className="card" style={{padding:'10px 14px',marginBottom:12,display:'flex',gap:10,justifyContent:'space-between',alignItems:'center'}}>
+    <div style={{fontSize:13}}><span style={{fontWeight:800,color:'#DC2626'}}>−{totS}</span> saídas &nbsp; <span style={{fontWeight:800,color:'#059669'}}>+{totE}</span> entradas</div>
+    <button onClick={doXL} style={{padding:'6px 12px',background:'#059669',border:'none',borderRadius:8,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer'}}>📥 Excel</button>
   </div>
   {filtered.length===0
-    ?<div className="card" style={{padding:40,textAlign:'center',color:'#94A3B8'}}>Nenhum registro encontrado.</div>
+    ?<div className="card" style={{padding:40,textAlign:'center',color:'#94A3B8'}}>Nenhum registro no período.</div>
     :<div style={{display:'flex',flexDirection:'column',gap:6}}>
       {filtered.map(function(e){return(
         <div key={e.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:e.tipo==='entrada'?'#F0FDF4':'#FEF2F2',borderRadius:10,border:'1px solid '+(e.tipo==='entrada'?'#BBF7D0':'#FECACA')}}>
@@ -1122,13 +1122,13 @@ return(<div style={{maxWidth:900,margin:'0 auto',padding:'16px 14px'}}>
           <div style={{fontWeight:700,fontSize:15,color:r.color||B}}>{nomeC(r.nome)}</div>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-          <div style={{background:'#FEE2E2',borderRadius:12,padding:'12px 14px',textAlign:'center',border:'1px solid #FCA5A5'}}>
-            <div style={{fontSize:10,color:'#94A3B8',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:'.04em'}}>Saídas</div>
+          <div style={{background:'#FEE2E2',borderRadius:12,padding:'12px 14px',textAlign:'center'}}>
+            <div style={{fontSize:10,color:'#94A3B8',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Saídas</div>
             <div style={{fontSize:26,fontWeight:900,color:'#DC2626'}}>{r.qtdS}</div>
             <div style={{fontSize:11,color:'#94A3B8'}}>{r.cntS} reg.</div>
           </div>
-          <div style={{background:'#DCFCE7',borderRadius:12,padding:'12px 14px',textAlign:'center',border:'1px solid #86EFAC'}}>
-            <div style={{fontSize:10,color:'#94A3B8',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:'.04em'}}>Entradas</div>
+          <div style={{background:'#DCFCE7',borderRadius:12,padding:'12px 14px',textAlign:'center'}}>
+            <div style={{fontSize:10,color:'#94A3B8',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Entradas</div>
             <div style={{fontSize:26,fontWeight:900,color:'#0C6B3E'}}>{r.qtdE}</div>
             <div style={{fontSize:11,color:'#94A3B8'}}>{r.cntE} reg.</div>
           </div>
@@ -1147,7 +1147,7 @@ return(<div style={{maxWidth:900,margin:'0 auto',padding:'16px 14px'}}>
           var pct=Math.round((r.total/maxT)*100);
           var medals=['🥇','🥈','🥉'];
           var medalCors=['#F59E0B','#9CA3AF','#CD7F32'];
-          return <div key={r.id} style={{padding:'10px 16px',borderBottom:i<ranking.length-1?'1px solid #F8FAFC':'none',display:'flex',gap:12,alignItems:'center'}}>
+          return <div key={r.nome} style={{padding:'10px 16px',borderBottom:i<ranking.length-1?'1px solid #F8FAFC':'none',display:'flex',gap:12,alignItems:'center'}}>
             <div style={{width:28,height:28,borderRadius:'50%',background:i<3?medalCors[i]:'#F1F5F9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:i<3?16:13,fontWeight:700,color:i<3?'#fff':'#94A3B8',flexShrink:0}}>{i<3?medals[i]:i+1}</div>
             <div style={{flex:1}}>
               <div style={{fontWeight:600,fontSize:13,color:'#1E293B'}}>{r.nome}</div>
@@ -2668,17 +2668,9 @@ return(
   {/* NAVBAR */}
   <div style={{background:'linear-gradient(135deg,#0A2D6E 0%,#1351B4 100%)',padding:'0 16px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10,boxShadow:'0 2px 20px rgba(10,45,110,.35)',height:56}}>
     <div style={{display:'flex',alignItems:'center',gap:10}}>
-      <svg width="34" height="34" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
-        <defs>
-          <linearGradient id="fcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#DBEAFE"/>
-            <stop offset="100%" stopColor="#fff"/>
-          </linearGradient>
-        </defs>
-        <circle cx="60" cy="60" r="56" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.25)" strokeWidth="1.5"/>
-        <circle cx="60" cy="60" r="42" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth="1"/>
-        <text x="60" y="75" fontSize="48" fontWeight="300" letterSpacing="3" fill="url(#lcGrad)" textAnchor="middle" fontFamily="'Georgia', serif">FC</text>
-      </svg>
+      <div style={{width:34,height:34,borderRadius:10,background:'rgba(255,255,255,0.18)',border:'1.5px solid rgba(255,255,255,0.3)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <span style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:15,fontWeight:900,color:'#fff',letterSpacing:'-1px'}}>FC</span>
+        </div>
       <div><div style={{fontWeight:800,fontSize:15,color:'#fff',letterSpacing:'-.01em'}}>FarmaControl</div><div style={{fontSize:9,color:'rgba(255,255,255,.5)',letterSpacing:'.02em'}}>{new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()}</div></div>
     </div>
     <div style={{display:'flex',alignItems:'center',gap:8}}>
