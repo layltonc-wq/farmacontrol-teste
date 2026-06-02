@@ -510,7 +510,7 @@ var _carrinhoNota=useState([]);var carrinhoNota=_carrinhoNota[0];var setCarrinho
 var _editIdx=useState(null);var editIdx=_editIdx[0];var setEditIdx=_editIdx[1];
 var _showNovoMed=useState(false);var showNovoMed=_showNovoMed[0];var setShowNovoMed=_showNovoMed[1];
 var _novoMedNome=useState('');var novoMedNome=_novoMedNome[0];var setNovoMedNome=_novoMedNome[1];
-var _novoMedCat=useState('medicamento');var novoMedCat=_novoMedCat[0];var setNovoMedCat=_novoMedCat[1];
+var _novoMedCat=useState('injetavel');var novoMedCat=_novoMedCat[0];var setNovoMedCat=_novoMedCat[1];
 var _novoMedQty=useState('');var novoMedQty=_novoMedQty[0];var setNovoMedQty=_novoMedQty[1];
 var _novoMedLote=useState('');var novoMedLote=_novoMedLote[0];var setNovoMedLote=_novoMedLote[1];
 var _novoMedVal=useState('');var novoMedVal=_novoMedVal[0];var setNovoMedVal=_novoMedVal[1];
@@ -539,7 +539,7 @@ function save(){if(!sel){setErr('Selecione um medicamento.');return;}var q=parse
   function cadastrarNovoMed(){
     if(!novoMedNome.trim())return;
     setSalvandoNota(true);
-    db.collection('medications').add({nome:novoMedNome.trim().toUpperCase(),categoria:novoMedCat,tipo:novoMedCat,ean:'',estoqueMin:5,criadoEm:new Date().toISOString(),criadoPor:user.name}).then(function(ref){
+    db.collection('medicamentos').add({nome:novoMedNome.trim().toUpperCase(),categoria:novoMedCat,tipo:novoMedCat,ean:'',estoqueMin:5,criadoEm:new Date().toISOString(),criadoPor:user.name}).then(function(ref){
       var q2=parseInt(novoMedQty)||0;
       if(q2>0){
         var item={medId:ref.id,medNome:novoMedNome.trim().toUpperCase(),qty:q2,lote:novoMedLote||loteNotaReal||'',validade:novoMedVal||valNotaReal||'',novo:true};
