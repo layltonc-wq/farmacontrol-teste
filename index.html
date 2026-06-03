@@ -2249,7 +2249,7 @@ function TabAntibiotico({user,medications,stock,allUsers}){
       <div style={{padding:'0 16px',marginBottom:12}}>
         <input value={busca} onChange={function(e){setBusca(e.target.value);}} placeholder="Buscar paciente ou medico..." style={{width:'100%',padding:'10px 14px',borderRadius:10,border:'1.5px solid #E2E8F0',fontSize:14,marginBottom:10,boxSizing:'border-box'}}/>
         <div style={{display:'flex',gap:6,overflowX:'auto'}}>
-          {[['ativos','💉 Ativos'],['espera','⏳ Espera'],['dose_ataque','⚡ Ataque'],['concluido','✅ Concluidos'],['desistiu','❌ Desistiram'],['todos','Todos']].map(function(f){
+          {[['ativos','💉 Ativos'],['espera','⏳ Espera'],['dose_ataque','⚡ Ataque'],['concluido','✅ Concluidos'],['finalizado','🏁 Finalizados'],['desistiu','❌ Desistiram'],['todos','Todos']].map(function(f){
             return <button key={f[0]} onClick={function(){setFiltro(f[0]);}} style={{flexShrink:0,padding:'7px 9px',borderRadius:10,border:'none',background:filtro===f[0]?B:'#F1F5F9',color:filtro===f[0]?'#fff':'#64748B',fontWeight:filtro===f[0]?700:500,fontSize:11,cursor:'pointer',whiteSpace:'nowrap'}}>{f[1]}</button>;
           })}
           <button onClick={function(){setFiltro('interrompido');}} style={{flexShrink:0,padding:'7px 9px',borderRadius:10,border:'none',background:filtro==='interrompido'?'#DC2626':'#F1F5F9',color:filtro==='interrompido'?'#fff':'#DC2626',fontWeight:filtro==='interrompido'?700:600,fontSize:11,cursor:'pointer',whiteSpace:'nowrap',position:'relative'}}>
