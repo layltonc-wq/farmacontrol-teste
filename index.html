@@ -3348,8 +3348,8 @@ return(
               {id:'relatorio',icon:'📊',label:'Relatório',show:true},
               {id:'gestao',icon:'👥',label:'Gestão',badge:badge,show:can(user.role,'gestao')},
               {id:'log',icon:'🔐',label:'Log de Acesso',show:can(user.role,'log')},
-              {id:'histnotas',icon:'🗂️',label:'Histórico de Notas',show:true},
-              {id:'previsao',icon:'📋',label:'Previsão / Pedido',show:isManager},
+              {id:'histnotas',icon:'🗂️',label:'Histórico de Notas',show:isManagerRole},
+              {id:'previsao',icon:'📋',label:'Previsão / Pedido',show:isManagerRole},
               {id:'histcontas',icon:'📋',label:'Hist. de Contas',show:can(user.role,'log')},
               {id:'admin',icon:'🔧',label:'Painel Admin',show:user.role==='tecnico'},
             ].filter(function(t){return t.show;}).map(function(t){return(
