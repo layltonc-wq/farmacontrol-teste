@@ -2783,204 +2783,6 @@ function useModal(){
   return {confirm2:confirm2,alert2:alert2,ModalRender:ModalRender,modal:modal};
 }
 
-function TabHistoricoNotas({user,entries,medications,db}){
-  var isManager=user.role==='gestor'||user.role==='tecnico';
-  var _notaAberta=React.useState(null);var notaAberta=_notaAberta[0];var setNotaAberta=_notaAberta[1];
-  var _editEntry=React.useState(null);var editEntry=_editEntry[0];var setEditEntry=_editEntry[1];
-  var _editFields=React.useState({});var editFields=_editFields[0];var setEditFields=_editFields[1];
-  var _saving=React.useState(false);var saving=_saving[0];var setSaving=_saving[1];
-  var _msg=React.useState('');var msg=_msg[0];var setMsg=_msg[1];
-  var _search=React.useState('');var search=_search[0];var setSearch=_search[1];
-
-  // Agrupar entries de entrada por nfNumero
-  var entradas=entries.filter(function(e){return e.tipo==='entrada';});
-
-  var grupos={};
-  entradas.forEach(function(e){
-    var chave=e.nfNumero?(e.nfNumero+' ||| '+(e.nfFornecedor||'')):'__sem_nota__';
-    if(!grupos[chave])grupos[chave]={
-      nfNumero:e.nfNumero||'',
-      fornecedor:e.nfFornecedor||'',
-      data:e.criadoEm||e.date||'',
-      autor:e.autorNome||'',
-      itens:[]
-    };
-    grupos[chave].itens.push(e);
-    // pegar a data mais antiga do grupo
-    if((e.criadoEm||'')>(grupos[chave].data||''))grupos[chave].data=e.criadoEm||'';
-  });
-
-  var lista=Object.values(grupos).sort(function(a,b){return (b.data||'').localeCompare(a.data||'');});
-
-  // Filtro por busca
-  if(search.trim()){
-    var s=search.toLowerCase();
-    lista=lista.filter(function(g){
-      return (g.nfNumero&&g.nfNumero.toLowerCase().includes(s))||
-             (g.fornecedor&&g.fornecedor.toLowerCase().includes(s))||
-             g.itens.some(function(i){return i.medicamentoNome&&i.medicamentoNome.toLowerCase().includes(s);});
-    });
-  }
-
-  function iniciarEdicao(entry){
-    setEditEntry(entry);
-    setEditFields({nota:entry.nfNumero||'',fornecedor:entry.nfFornecedor||'',medicamento:entry.medicamentoNome||'',quantidade:entry.quantidade||'',lote:entry.lote||'',validade:entry.validade||''});
-  }
-
-  function salvarEdicao(){
-    if(!editEntry||saving)return;
-    setSaving(true);
-    db.collection('entries').doc(editEntry.id).update({
-      nfNumero:editFields.nota,
-      nfFornecedor:editFields.fornecedor,
-      medicamentoNome:editFields.medicamento,
-      quantidade:parseInt(editFields.quantidade)||editEntry.quantidade,
-      lote:editFields.lote,
-      validade:editFields.validade,
-      editadoPor:user.name,
-      editadoEm:new Date().toISOString()
-    }).then(function(){
-      setSaving(false);setEditEntry(null);setEditFields({});
-      setMsg('✅ Alteração salva!');setTimeout(function(){setMsg('');},3000);
-    }).catch(function(e){setSaving(false);setMsg('❌ Erro: '+e.message);});
-  }
-
-  var TIPOS_COR={medicamento:'#1351B4',controlado:'#DC2626',injetavel:'#7C3AED',leite:'#D97706',penso:'#0C6B3E'};
-  var TIPOS_ICON={medicamento:'💊',controlado:'🔒',injetavel:'💉',leite:'🍼',penso:'🩹'};
-
-  return(
-  <div style={{maxWidth:700,margin:'0 auto',padding:'16px 12px 90px'}}>
-
-    {/* Header */}
-    <div style={{marginBottom:18}}>
-      <div style={{fontWeight:800,fontSize:22,color:'#1E293B',marginBottom:4}}>📋 Histórico de Notas</div>
-      <div style={{fontSize:13,color:'#64748B'}}>Entradas agrupadas por nota fiscal</div>
-    </div>
-
-    {/* Busca */}
-    <input value={search} onChange={function(e){setSearch(e.target.value);}} placeholder="🔍 Buscar por NF, fornecedor ou medicamento..." className="inp" style={{marginBottom:16}}/>
-
-    {msg&&<div className={msg.startsWith('✅')?'ok':'er'} style={{marginBottom:12}}>{msg}</div>}
-
-    {lista.length===0&&<div style={{textAlign:'center',padding:40,color:'#94A3B8'}}>
-      <div style={{fontSize:40,marginBottom:12}}>📋</div>
-      <div style={{fontWeight:600}}>{search?'Nenhuma nota encontrada':'Nenhuma entrada registrada ainda'}</div>
-    </div>}
-
-    {/* Lista de Notas */}
-    {lista.map(function(grupo,gi){
-      var chave=grupo.nfNumero?(grupo.nfNumero+' ||| '+(grupo.fornecedor||'')):'__sem_nota__';
-      var aberta=notaAberta===chave;
-      var dtFormatada=grupo.data?new Date(grupo.data).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
-      var totalItens=grupo.itens.length;
-      var totalQtd=grupo.itens.reduce(function(acc,i){return acc+(Number(i.quantidade)||0);},0);
-
-      return(
-      <div key={chave} style={{marginBottom:12,borderRadius:16,overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,0.07)',border:'1px solid '+(aberta?'#1351B4':'#E2E8F0'),transition:'border-color .2s'}}>
-
-        {/* Cabeçalho da Nota — clicável */}
-        <button onClick={function(){setNotaAberta(aberta?null:chave);setEditEntry(null);}} style={{width:'100%',background:aberta?'#EFF6FF':'#fff',border:'none',padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left',transition:'background .2s'}}>
-          <div style={{width:42,height:42,borderRadius:12,background:aberta?'#1351B4':'#F1F5F9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0,transition:'background .2s'}}>
-            {aberta?'📂':'📁'}
-          </div>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontWeight:700,fontSize:14,color:aberta?'#1351B4':'#1E293B',marginBottom:2}}>
-              {grupo.nfNumero?'NF '+grupo.nfNumero:'Sem número de nota'}
-            </div>
-            <div style={{fontSize:12,color:'#64748B',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-              {grupo.fornecedor||'Fornecedor não informado'} · {dtFormatada}
-            </div>
-          </div>
-          <div style={{textAlign:'right',flexShrink:0}}>
-            <div style={{fontWeight:700,fontSize:13,color:'#1E293B'}}>{totalItens} {totalItens===1?'item':'itens'}</div>
-            <div style={{fontSize:11,color:'#94A3B8'}}>{totalQtd} unid.</div>
-          </div>
-          <div style={{fontSize:18,color:aberta?'#1351B4':'#94A3B8',marginLeft:4}}>{aberta?'▲':'▼'}</div>
-        </button>
-
-        {/* Itens da Nota expandidos */}
-        {aberta&&<div style={{borderTop:'1px solid #E2E8F0',background:'#FAFBFC'}}>
-          <div style={{padding:'10px 12px 6px',fontSize:11,fontWeight:700,color:'#94A3B8',textTransform:'uppercase',letterSpacing:'.05em'}}>
-            Medicamentos desta nota · por {grupo.autor||'—'}
-          </div>
-
-          {grupo.itens.sort(function(a,b){return a.medicamentoNome<b.medicamentoNome?-1:1;}).map(function(item){
-            var med=medications.find(function(m){return m.id===item.medicamentoId;});
-            var cat=med?(med.categoria||'medicamento'):(item.categoriaMed||'medicamento');
-            var cor=TIPOS_COR[cat]||'#1351B4';
-            var icon=TIPOS_ICON[cat]||'💊';
-            var editando=editEntry&&editEntry.id===item.id;
-
-            return(
-            <div key={item.id} style={{margin:'0 12px 10px',borderRadius:12,background:'#fff',border:'1.5px solid '+(editando?'#F59E0B':'#E2E8F0'),overflow:'hidden',transition:'border-color .2s'}}>
-
-              {/* Linha do medicamento */}
-              <div style={{padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
-                <div style={{width:34,height:34,borderRadius:10,background:cor+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{icon}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:700,fontSize:13,color:'#1E293B',marginBottom:2}}>{item.medicamentoNome||'—'}</div>
-                  <div style={{display:'flex',gap:8,flexWrap:'wrap',fontSize:11,color:'#94A3B8'}}>
-                    <span style={{background:cor+'18',color:cor,padding:'1px 7px',borderRadius:10,fontWeight:600}}>{icon} {cat}</span>
-                    {item.lote&&<span>Lote: {item.lote}</span>}
-                    {item.validade&&<span>Val: {item.validade}</span>}
-                    {item.editadoPor&&<span style={{color:'#F59E0B',fontWeight:600}}>✏️ {item.editadoPor}</span>}
-                  </div>
-                </div>
-                <div style={{textAlign:'right',flexShrink:0}}>
-                  <div style={{fontWeight:800,fontSize:18,color:'#0C6B3E'}}>+{item.quantidade}</div>
-                  {isManager&&<button onClick={function(){editando?setEditEntry(null):iniciarEdicao(item);}} style={{background:editando?'#FEF3C7':'#EFF6FF',border:'none',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:600,color:editando?'#92400E':'#1351B4',cursor:'pointer',marginTop:4}}>
-                    {editando?'✕ Fechar':'✏️ Editar'}
-                  </button>}
-                </div>
-              </div>
-
-              {/* Formulário de edição */}
-              {editando&&isManager&&<div style={{borderTop:'1px solid #FDE68A',background:'#FFFBEB',padding:'14px 14px'}}>
-                <div style={{fontWeight:700,fontSize:13,color:'#92400E',marginBottom:10}}>✏️ Editar item</div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>Nº NOTA</div>
-                    <input value={editFields.nota||''} onChange={function(e){setEditFields(function(p){return Object.assign({},p,{nota:e.target.value});});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
-                  </div>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>FORNECEDOR</div>
-                    <input value={editFields.fornecedor||''} onChange={function(e){setEditFields(function(p){return Object.assign({},p,{fornecedor:e.target.value});});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
-                  </div>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>MEDICAMENTO</div>
-                    <input value={editFields.medicamento||''} onChange={function(e){setEditFields(function(p){return Object.assign({},p,{medicamento:e.target.value});});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
-                  </div>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>QUANTIDADE</div>
-                    <input type="number" value={editFields.quantidade||''} onChange={function(e){setEditFields(function(p){return Object.assign({},p,{quantidade:e.target.value});});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
-                  </div>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>LOTE</div>
-                    <input value={editFields.lote||''} onChange={function(e){setEditFields(function(p){return Object.assign({},p,{lote:e.target.value});});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
-                  </div>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>VALIDADE</div>
-                    <input value={editFields.validade||''} onChange={function(e){setEditFields(function(p){return Object.assign({},p,{validade:e.target.value});});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
-                  </div>
-                </div>
-                {saving&&<div className="inf" style={{marginBottom:8}}>⏳ Salvando...</div>}
-                <div style={{display:'flex',gap:8}}>
-                  <button onClick={function(){setEditEntry(null);setEditFields({});}} className="bs" style={{flex:1,padding:'10px 0',fontSize:13}}>Cancelar</button>
-                  <button onClick={salvarEdicao} disabled={saving} className="bg" style={{flex:2,padding:'10px 0',fontSize:13}}>✅ Salvar alterações</button>
-                </div>
-              </div>}
-            </div>
-            );
-          })}
-          <div style={{height:8}}/>
-        </div>}
-      </div>
-      );
-    })}
-  </div>
-  );
-}
-
 function App(){
 var {confirm2,alert2,ModalRender,modal}=useModal();
 var _ready=useState(false);var ready=_ready[0];var setReady=_ready[1];var _user=useState(null);var user=_user[0];var setUser=_user[1];var _entries=useState([]);var entries=_entries[0];var setEntries=_entries[1];var _meds=useState([]);var meds=_meds[0];var setMeds=_meds[1];var _loading=useState(true);var loading=_loading[0];var setLoading=_loading[1];var _tab=useState('dashboard');var tab=_tab[0];var setTab=_tab[1];var _menuAberto=useState(false);var menuAberto=_menuAberto[0];var setMenuAberto=_menuAberto[1];var _showSairModal=useState(false);var showSairModal=_showSairModal[0];var setShowSairModal=_showSairModal[1];var _pending=useState(0);var pending=_pending[0];var setPending=_pending[1];var _alertCount=useState(0);var alertCount=_alertCount[0];var setAlertCount=_alertCount[1];
@@ -3010,7 +2812,189 @@ function encerrarPlantao(){if(!shiftId)return;if(!confirm('Encerrar o plantao de
 function sairDoPlantao(){if(!confirm('Sair do plantao?'))return;localStorage.setItem('fc_shift_saiu_'+todayStr(),'1');if(shiftId&&plantao){var eq=(plantao.equipe||[]).map(function(m){if(m.id===user.uid){var o={};for(var k in m)o[k]=m[k];o.status='saiu';return o;}return m;});db.collection('plantoes').doc(shiftId).update({equipe:eq}).catch(function(){});}setIsGuest(true);}
 function addSolicitacao(data){var obj={medicamentoId:data.medicamentoId,medicamentoNome:data.medicamentoNome,ean:data.ean||'',tipo:data.tipo,quantidade:data.quantidade,lote:data.lote||'',validade:data.validade||'',observacao:data.observação||'',solicitanteId:user.uid,solicitanteNome:user.name,solicitanteCargo:user.role,solicitanteColor:user.color||B,status:'pendente',criadoEm:new Date().toISOString(),origem:'convidado'};return db.collection('solicitacoes').add(obj);}
 function addEntry(data){var obj={criadoEm:new Date().toISOString(),date:todayStr(),autorId:user.uid,autorNome:user.name||user.email,autorCargo:user.role||'',autorColor:user.color||B};for(var k in data)obj[k]=data[k];return db.collection('entries').add(obj);}
-function logout(){if(!confirm('Sair do sistema?'))return;db.collection('logs_acesso').add({uid:user.uid,nome:user.name,cargo:user.role,acao:'logout',criadoEm:new Date().toISOString()}).catch(function(){});auth.signOut().catch(function(){});localStorage.removeItem('fc_user');localStorage.removeItem('fc_last_act');setUser(null);setShiftChecked(false);setShowShift(false);setPlantao(null);setIsGuest(false);}
+function logout(){if(!confirm('Sair do sistema?'))return;db.collection('logs_acesso').add({uid:user.uid,nome:user.name,cargo:user.role,acao:'logout',criadoEm:new Date().toISOString()}).catch(function(){});auth.signOut().catch(functio
+function TabHistoricoNotas(props){
+  var user=props.user;var entries=props.entries;var medications=props.medications;var db=props.db;
+  var isManager=user.role==='gestor'||user.role==='tecnico';
+  var _notaAberta=useState(null);var notaAberta=_notaAberta[0];var setNotaAberta=_notaAberta[1];
+  var _editEntry=useState(null);var editEntry=_editEntry[0];var setEditEntry=_editEntry[1];
+  var _editFields=useState({});var editFields=_editFields[0];var setEditFields=_editFields[1];
+  var _saving=useState(false);var saving=_saving[0];var setSaving=_saving[1];
+  var _msg=useState('');var msg=_msg[0];var setMsg=_msg[1];
+  var _search=useState('');var search=_search[0];var setSearch=_search[1];
+
+  var TIPOS_COR={medicamento:'#1351B4',controlado:'#DC2626',injetavel:'#7C3AED',leite:'#D97706',penso:'#0C6B3E'};
+  var TIPOS_ICON={medicamento:'💊',controlado:'🔒',injetavel:'💉',leite:'🍼',penso:'🩹'};
+  var TIPOS_LABEL={medicamento:'Farm. Básica',controlado:'Controlado',injetavel:'Injetável',leite:'Leite',penso:'Penso'};
+
+  var entradas=(entries||[]).filter(function(e){return e.tipo==='entrada';});
+
+  var gruposMap={};
+  entradas.forEach(function(e){
+    var nf=e.nfNumero||'';
+    var forn=e.nfFornecedor||'';
+    var chave=nf?(nf+'__'+forn):'__sem_nota__';
+    if(!gruposMap[chave]){
+      gruposMap[chave]={chave:chave,nfNumero:nf,fornecedor:forn,data:e.criadoEm||'',autor:e.autorNome||'',itens:[]};
+    }
+    gruposMap[chave].itens.push(e);
+    if((e.criadoEm||'')>(gruposMap[chave].data||''))gruposMap[chave].data=e.criadoEm||'';
+  });
+
+  var lista=Object.values(gruposMap).sort(function(a,b){return (b.data||'').localeCompare(a.data||'');});
+
+  if(search.trim()){
+    var s=search.toLowerCase();
+    lista=lista.filter(function(g){
+      return (g.nfNumero&&g.nfNumero.toLowerCase().indexOf(s)>=0)||
+             (g.fornecedor&&g.fornecedor.toLowerCase().indexOf(s)>=0)||
+             g.itens.some(function(i){return i.medicamentoNome&&i.medicamentoNome.toLowerCase().indexOf(s)>=0;});
+    });
+  }
+
+  function iniciarEdicao(entry){
+    setEditEntry(entry);
+    setEditFields({nota:entry.nfNumero||'',fornecedor:entry.nfFornecedor||'',medicamento:entry.medicamentoNome||'',quantidade:String(entry.quantidade||''),lote:entry.lote||'',validade:entry.validade||''});
+  }
+
+  function salvarEdicao(){
+    if(!editEntry||saving)return;
+    setSaving(true);
+    var upd={
+      nfNumero:editFields.nota,
+      nfFornecedor:editFields.fornecedor,
+      medicamentoNome:editFields.medicamento,
+      quantidade:parseInt(editFields.quantidade)||editEntry.quantidade,
+      lote:editFields.lote,
+      validade:editFields.validade,
+      editadoPor:user.name,
+      editadoEm:new Date().toISOString()
+    };
+    db.collection('entries').doc(editEntry.id).update(upd).then(function(){
+      setSaving(false);setEditEntry(null);setEditFields({});
+      setMsg('ok');setTimeout(function(){setMsg('');},3000);
+    }).catch(function(e){setSaving(false);setMsg('err:'+e.message);});
+  }
+
+  return(
+    <div style={{maxWidth:700,margin:'0 auto',padding:'16px 12px 90px'}}>
+      <div style={{marginBottom:16}}>
+        <div style={{fontWeight:800,fontSize:22,color:'#1E293B',marginBottom:2}}>🗂️ Histórico de Notas</div>
+        <div style={{fontSize:13,color:'#64748B'}}>Entradas agrupadas por nota fiscal · apenas gestor e técnico</div>
+      </div>
+      <input value={search} onChange={function(e){setSearch(e.target.value);}} placeholder="🔍 Buscar por NF, fornecedor ou medicamento..." className="inp" style={{marginBottom:14}}/>
+      {msg==='ok'&&<div className="ok" style={{marginBottom:12}}>✅ Alteração salva com sucesso!</div>}
+      {msg.indexOf('err:')===0&&<div className="er" style={{marginBottom:12}}>❌ {msg.slice(4)}</div>}
+      {lista.length===0&&(
+        <div style={{textAlign:'center',padding:'48px 0',color:'#94A3B8'}}>
+          <div style={{fontSize:48,marginBottom:12}}>📋</div>
+          <div style={{fontWeight:600,fontSize:15}}>{search?'Nenhuma nota encontrada':'Nenhuma entrada registrada ainda'}</div>
+        </div>
+      )}
+      {lista.map(function(grupo){
+        var aberta=notaAberta===grupo.chave;
+        var dtStr=grupo.data?new Date(grupo.data).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+        var totalQtd=grupo.itens.reduce(function(acc,i){return acc+(Number(i.quantidade)||0);},0);
+        return(
+          <div key={grupo.chave} style={{marginBottom:10,borderRadius:16,overflow:'hidden',border:'1.5px solid '+(aberta?'#1351B4':'#E2E8F0'),boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+            <button onClick={function(){setNotaAberta(aberta?null:grupo.chave);setEditEntry(null);}} style={{width:'100%',background:aberta?'#EFF6FF':'#fff',border:'none',padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left'}}>
+              <div style={{width:42,height:42,borderRadius:12,background:aberta?'#1351B4':'#F1F5F9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{aberta?'📂':'📁'}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:14,color:aberta?'#1351B4':'#1E293B',marginBottom:2}}>
+                  {grupo.nfNumero?('NF '+grupo.nfNumero):'Sem número de nota'}
+                </div>
+                <div style={{fontSize:12,color:'#64748B',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                  {grupo.fornecedor||'Fornecedor não informado'}{dtStr?' · '+dtStr:''}
+                </div>
+              </div>
+              <div style={{textAlign:'right',flexShrink:0,marginRight:8}}>
+                <div style={{fontWeight:700,fontSize:13,color:'#1E293B'}}>{grupo.itens.length} {grupo.itens.length===1?'item':'itens'}</div>
+                <div style={{fontSize:11,color:'#94A3B8'}}>{totalQtd} unid.</div>
+              </div>
+              <span style={{fontSize:16,color:aberta?'#1351B4':'#94A3B8'}}>{aberta?'▲':'▼'}</span>
+            </button>
+            {aberta&&(
+              <div style={{borderTop:'1px solid #E2E8F0',background:'#F8FAFC',padding:'8px 12px 12px'}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#94A3B8',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:8,paddingLeft:4}}>
+                  {grupo.itens.length} medicamento(s) · por {grupo.autor||'—'}
+                </div>
+                {grupo.itens.slice().sort(function(a,b){return (a.medicamentoNome||'').localeCompare(b.medicamentoNome||'');}).map(function(item){
+                  var med=(medications||[]).find(function(m){return m.id===item.medicamentoId;});
+                  var cat=med?(med.categoria||'medicamento'):(item.categoriaMed||'medicamento');
+                  var cor=TIPOS_COR[cat]||'#1351B4';
+                  var icon=TIPOS_ICON[cat]||'💊';
+                  var label=TIPOS_LABEL[cat]||cat;
+                  var editando=editEntry&&editEntry.id===item.id;
+                  return(
+                    <div key={item.id} style={{marginBottom:8,borderRadius:12,background:'#fff',border:'1.5px solid '+(editando?'#F59E0B':'#E2E8F0'),overflow:'hidden'}}>
+                      <div style={{padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
+                        <div style={{width:36,height:36,borderRadius:10,background:cor+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,flexShrink:0}}>{icon}</div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontWeight:700,fontSize:13,color:'#1E293B',marginBottom:3}}>{item.medicamentoNome||'—'}</div>
+                          <div style={{display:'flex',gap:6,flexWrap:'wrap',fontSize:11,color:'#94A3B8',alignItems:'center'}}>
+                            <span style={{background:cor+'18',color:cor,padding:'1px 8px',borderRadius:10,fontWeight:600}}>{icon} {label}</span>
+                            {item.lote&&<span>Lote: {item.lote}</span>}
+                            {item.validade&&<span>Val: {item.validade}</span>}
+                            {item.editadoPor&&<span style={{color:'#F59E0B',fontWeight:600}}>✏️ {item.editadoPor}</span>}
+                          </div>
+                        </div>
+                        <div style={{textAlign:'right',flexShrink:0}}>
+                          <div style={{fontWeight:800,fontSize:20,color:'#0C6B3E'}}>+{item.quantidade}</div>
+                          {isManager&&(
+                            <button onClick={function(){editando?setEditEntry(null):iniciarEdicao(item);}} style={{background:editando?'#FEF3C7':'#EFF6FF',border:'none',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:600,color:editando?'#92400E':'#1351B4',cursor:'pointer',marginTop:4}}>
+                              {editando?'✕':'✏️ Editar'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {editando&&isManager&&(
+                        <div style={{borderTop:'1px solid #FDE68A',background:'#FFFBEB',padding:'14px'}}>
+                          <div style={{fontWeight:700,fontSize:13,color:'#92400E',marginBottom:10}}>✏️ Editar item da nota</div>
+                          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+                            <div>
+                              <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>Nº DA NOTA</div>
+                              <input value={editFields.nota||''} onChange={function(e){var v=e.target.value;setEditFields(function(p){var n=Object.assign({},p);n.nota=v;return n;});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
+                            </div>
+                            <div>
+                              <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>FORNECEDOR</div>
+                              <input value={editFields.fornecedor||''} onChange={function(e){var v=e.target.value;setEditFields(function(p){var n=Object.assign({},p);n.fornecedor=v;return n;});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
+                            </div>
+                            <div>
+                              <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>MEDICAMENTO</div>
+                              <input value={editFields.medicamento||''} onChange={function(e){var v=e.target.value;setEditFields(function(p){var n=Object.assign({},p);n.medicamento=v;return n;});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
+                            </div>
+                            <div>
+                              <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>QUANTIDADE</div>
+                              <input type="number" value={editFields.quantidade||''} onChange={function(e){var v=e.target.value;setEditFields(function(p){var n=Object.assign({},p);n.quantidade=v;return n;});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
+                            </div>
+                            <div>
+                              <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>LOTE</div>
+                              <input value={editFields.lote||''} onChange={function(e){var v=e.target.value;setEditFields(function(p){var n=Object.assign({},p);n.lote=v;return n;});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
+                            </div>
+                            <div>
+                              <div style={{fontSize:11,fontWeight:600,color:'#64748B',marginBottom:3}}>VALIDADE</div>
+                              <input value={editFields.validade||''} onChange={function(e){var v=e.target.value;setEditFields(function(p){var n=Object.assign({},p);n.validade=v;return n;});}} className="inp" style={{marginBottom:0,fontSize:13}}/>
+                            </div>
+                          </div>
+                          {saving&&<div className="inf" style={{marginBottom:8}}>⏳ Salvando...</div>}
+                          <div style={{display:'flex',gap:8}}>
+                            <button onClick={function(){setEditEntry(null);setEditFields({});}} className="bs" style={{flex:1,padding:'10px 0',fontSize:13}}>Cancelar</button>
+                            <button onClick={salvarEdicao} disabled={saving} className="bg" style={{flex:2,padding:'10px 0',fontSize:13}}>✅ Salvar alterações</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+n(){});localStorage.removeItem('fc_user');localStorage.removeItem('fc_last_act');setUser(null);setShiftChecked(false);setShowShift(false);setPlantao(null);setIsGuest(false);}
 if(!ready)return <Setup onDone={function(){setReady(true);}}/>;
 if(!user)return <Auth onLogin={function(u){setUser(u);}}/>;
 if(showShift||showShiftModal)return <ShiftScreen user={user} allUsers={allUsers} onDone={handleShiftDone}/>;
