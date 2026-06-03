@@ -2794,6 +2794,7 @@ function TabPrevisao(props){
 
   // Carregar atas do Firebase
   useEffect(function(){
+    if(!db)return;
     var u=db.collection('atas').onSnapshot(function(s){
       var list=s.docs.map(function(d){var o={id:d.id};var data=d.data();for(var k in data)o[k]=data[k];return o;});
       list.sort(function(a,b){return (a.nome||'').localeCompare(b.nome||'');});
