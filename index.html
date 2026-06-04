@@ -411,7 +411,26 @@ return(
         {filtered.length>0&&!sel&&(
           <div className="sdrop">
             {filtered.map(function(m){return(
-              <div key={m.id} className="sdi" onClick={function(){setSel(m);setSearch(m.nome);setWarn('');}}>
+              <div key={m.id} className="sdi" onClick={function(){setSel(m);setSearch(m.nome);setWarn('');
+                // FEFO: pegar lote com validade mais próxima
+                (function(){
+                  var lotesEntrada={};
+                  (entries||[]).forEach(function(e){
+                    if(e.tipo!=='entrada'||e.medicamentoId!==m.id||!e.lote)return;
+                    var key=e.lote+'|'+(e.validade||'');
+                    if(!lotesEntrada[key])lotesEntrada[key]={lote:e.lote,validade:e.validade||''};
+                  });
+                  var lotes=Object.values(lotesEntrada);
+                  if(lotes.length===0)return;
+                  // Ordenar pela validade mais próxima (FEFO)
+                  lotes.sort(function(a,b){
+                    // Converter MM/YYYY para data do último dia do mês
+                    function toDate(v){if(!v)return new Date(9999,11,31);var p=v.split('/');if(p.length!==2)return new Date(9999,11,31);return new Date(parseInt(p[1]),parseInt(p[0]),0);}
+                    return toDate(a.validade)-toDate(b.validade);
+                  });
+                  setLote(lotes[0].lote);
+                  setVal(lotes[0].validade);
+                })();}}>
                 <span style={{fontWeight:600,color:'#1E293B'}}>{m.nome}</span>
                 <span style={{fontSize:12,fontWeight:700,color:'#0C6B3E',background:'#DCFCE7',padding:'3px 10px',borderRadius:20}}>{stock[m.id]||0} un.</span>
               </div>);
@@ -903,7 +922,7 @@ function HistModal(props){
   </Modal>);}
 function TabEstoque(props){var user=props.user;var medications=props.medications;var entries=props.entries;var stock=props.stock;var _search=useState('');var search=_search[0];var setSearch=_search[1];var _sub=useState('estoque');var sub=_sub[0];var setSub=_sub[1];var _showAdd=useState(false);var showAdd=_showAdd[0];var setShowAdd=_showAdd[1];var _hist=useState(null);var hist=_hist[0];var setHist=_hist[1];var _editId=useState(null);var editId=_editId[0];var setEditId=_editId[1];var _editNome=useState('');var editNome=_editNome[0];var setEditNome=_editNome[1];var _editMin=useState('');var editMin=_editMin[0];var setEditMin=_editMin[1];var _editTipo=useState('medicamento');var editTipo=_editTipo[0];var setEditTipo=_editTipo[1];var _newNome=useState('');var newNome=_newNome[0];var setNewNome=_newNome[1];var _newEan=useState('');var newEan=_newEan[0];var setNewEan=_newEan[1];var _newMin=useState('');var newMin=_newMin[0];var setNewMin=_newMin[1];var _newTipo=useState('medicamento');var newTipo=_newTipo[0];var setNewTipo=_newTipo[1];var _saving=useState(false);var saving=_saving[0];var setSaving=_saving[1];var _importStatus=useState('');var importStatus=_importStatus[0];var setImportStatus=_importStatus[1];var _importing=useState(false);var importing=_importing[0];var setImporting=_importing[1];var _filtCat=useState('todos');var filtCat=_filtCat[0];var setFiltCat=_filtCat[1];var _ajusteId=useState(null);var ajusteId=_ajusteId[0];var setAjusteId=_ajusteId[1];var _ajusteQty=useState('');var ajusteQty=_ajusteQty[0];var setAjusteQty=_ajusteQty[1];var _ajusteMotivo=useState('');var ajusteMotivo=_ajusteMotivo[0];var setAjusteMotivo=_ajusteMotivo[1];var _ajusteMed=useState(null);var ajusteMed=_ajusteMed[0];var setAjusteMed=_ajusteMed[1];var _loteSel=useState(null);var loteSel=_loteSel[0];var setLoteSel=_loteSel[1];var _editLote=useState(null);var editLote=_editLote[0];var setEditLote=_editLote[1];var _editLoteVal=useState('');var editLoteVal=_editLoteVal[0];var setEditLoteVal=_editLoteVal[1];var _editLoteData=useState('');var editLoteData=_editLoteData[0];var setEditLoteData=_editLoteData[1];
 var isManager=(user.role==='gestor'||user.role==='tecnico');var hoje=new Date();
-function getDiasVal(val){if(!val)return null;var p=val.split('/');if(p.length!==2)return null;var d=new Date(parseInt(p[1]),parseInt(p[0])-1,1);return Math.ceil((d-hoje)/86400000);}
+function getDiasVal(val){if(!val)return null;var p=val.split('/');if(p.length!==2)return null;var d=new Date(parseInt(p[1]),parseInt(p[0]),0);return Math.ceil((d-hoje)/86400000);}
 var medList=medications.map(function(m){var me=entries.filter(function(e){return e.medicamentoId===m.id&&e.tipo==='entrada'&&e.lote;});var loteMap={};me.forEach(function(e){if(!e.lote)return;var lk=e.lote;if(!loteMap[lk])loteMap[lk]={lote:e.lote,validade:e.validade||'',entrada:0,saida:0};loteMap[lk].entrada+=(e.quantidade||0);if(e.validade&&!loteMap[lk].validade)loteMap[lk].validade=e.validade;});
   var saidas=entries.filter(function(e){return e.medicamentoId===m.id&&e.tipo==='saida'&&e.lote;});
   saidas.forEach(function(e){var lk=e.lote;if(loteMap[lk])loteMap[lk].saida+=(e.quantidade||0);});
@@ -1040,7 +1059,76 @@ var rankMap={};entries.forEach(function(e){if(e.tipo!=='saida')return;var k=e.me
 var respMap={};entries.forEach(function(e){var k=e.autorNome||'?';if(!respMap[k])respMap[k]={nome:k,color:e.autorColor,qtdS:0,qtdE:0,cntS:0,cntE:0};if(e.tipo==='saida'){respMap[k].qtdS+=(e.quantidade||0);respMap[k].cntS++;}else{respMap[k].qtdE+=(e.quantidade||0);respMap[k].cntE++;}});var porResp=Object.keys(respMap).map(function(k){return respMap[k];}).sort(function(a,b){return (b.qtdS+b.qtdE)-(a.qtdS+a.qtdE);});
 function doXL(){var rows=[['Data','Hora','Responsavel','Medicamento','Tipo','Qtd','Lote']];filtered.forEach(function(e){rows.push([fmtD(e.criadoEm),fmtT(e.criadoEm),e.autorNome||'',e.medicamentoNome||'',e.tipo==='entrada'?'Entrada':'Saida',e.quantidade||0,e.lote||'']);});var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Relatorio');XLSX.writeFile(wb,'relatorio_'+dF+'_'+dT+'.xlsx');}
 return(<div style={{maxWidth:900,margin:'0 auto',padding:'16px 14px'}}>
-<div className="tab-sw">{[['mov','Movimentações'],['resp','Por Responsável'],['rank','Ranking']].map(function(t){return <button key={t[0]} onClick={function(){setSub(t[0]);}} className={sub===t[0]?'on':''}>{t[1]}</button>;})}</div>
+<div className="tab-sw">{[['mov','Movimentações'],['dia','Saídas do Dia'],['resp','Por Responsável'],['rank','Ranking']].map(function(t){return <button key={t[0]} onClick={function(){setSub(t[0]);}} className={sub===t[0]?'on':''}>{t[1]}</button>;})}</div>
+{sub==='dia'&&<div style={{paddingBottom:8}}>
+  <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:14,flexWrap:'wrap'}}>
+    <div style={{fontWeight:700,fontSize:16,color:'#1E293B',flex:1}}>📋 Saídas do Dia</div>
+    <input type="date" value={dF} onChange={function(e){setDF(e.target.value);}} className="inp" style={{marginBottom:0,width:'auto'}}/>
+  </div>
+  {(function(){
+    var saidasDia=entries.filter(function(e){return e.tipo==='saida'&&(e.date||'')===(dF||todayStr());});
+    var agrupado={};
+    saidasDia.forEach(function(e){
+      var key=e.medicamentoId||e.medicamentoNome||'?';
+      if(!agrupado[key]){
+        var med=medications.find(function(m){return m.id===e.medicamentoId;});
+        agrupado[key]={nome:e.medicamentoNome||(med&&med.nome)||'?',total:0,saidas:[],cat:(med&&med.categoria)||'medicamento'};
+      }
+      agrupado[key].total+=(Number(e.quantidade)||0);
+      agrupado[key].saidas.push(e);
+    });
+    var lista=Object.values(agrupado).sort(function(a,b){return a.nome.localeCompare(b.nome);});
+    var totalGeral=lista.reduce(function(acc,it){return acc+it.total;},0);
+    if(lista.length===0)return(<div style={{textAlign:'center',padding:'40px 0',color:'#94A3B8'}}><div style={{fontSize:40,marginBottom:8}}>📋</div><div style={{fontWeight:600}}>Nenhuma saída registrada neste dia</div></div>);
+    var COR_CAT={medicamento:'#1351B4',controlado:'#DC2626',injetavel:'#7C3AED',leite:'#D97706',penso:'#0C6B3E'};
+    var ICO_CAT={medicamento:'💊',controlado:'🔒',injetavel:'💉',leite:'🍼',penso:'🩹'};
+    return(<div>
+      <div style={{background:'#EFF6FF',borderRadius:12,padding:'12px 16px',marginBottom:14,display:'flex',justifyContent:'space-between'}}>
+        <span style={{fontWeight:700,color:'#1351B4'}}>{lista.length} medicamento(s) com saída</span>
+        <span style={{fontWeight:700,color:'#1351B4'}}>{totalGeral} unidades no total</span>
+      </div>
+      <div style={{background:'#fff',borderRadius:14,border:'1px solid #E2E8F0',overflow:'hidden',marginBottom:14}}>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+          <thead>
+            <tr style={{background:'#F8FAFC'}}>
+              <th style={{padding:'10px 14px',textAlign:'left',fontWeight:700,color:'#64748B',fontSize:11,textTransform:'uppercase',letterSpacing:'.05em',borderBottom:'1px solid #E2E8F0'}}>Medicamento</th>
+              <th style={{padding:'10px 14px',textAlign:'center',fontWeight:700,color:'#64748B',fontSize:11,textTransform:'uppercase',letterSpacing:'.05em',borderBottom:'1px solid #E2E8F0'}}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map(function(it,i){
+              var cor=COR_CAT[it.cat]||'#1351B4';
+              var ico=ICO_CAT[it.cat]||'💊';
+              return(<tr key={i} style={{borderBottom:'1px solid #F1F5F9'}}>
+                <td style={{padding:'10px 14px'}}>
+                  <div style={{fontWeight:600,color:'#1E293B'}}>{it.nome}</div>
+                  <span style={{background:cor+'18',color:cor,padding:'1px 8px',borderRadius:10,fontSize:11,fontWeight:600}}>{ico} {it.cat}</span>
+                </td>
+                <td style={{padding:'10px 14px',textAlign:'center',fontWeight:800,fontSize:18,color:'#DC2626'}}>-{it.total}</td>
+              </tr>);
+            })}
+          </tbody>
+          <tfoot>
+            <tr style={{background:'#F8FAFC',borderTop:'2px solid #E2E8F0'}}>
+              <td style={{padding:'10px 14px',fontWeight:700,color:'#1E293B'}}>TOTAL GERAL</td>
+              <td style={{padding:'10px 14px',textAlign:'center',fontWeight:800,fontSize:16,color:'#DC2626'}}>-{totalGeral}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <button onClick={function(){
+        var hoje=new Date(dF+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+        var html='<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px}h2{font-size:16px;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#f0f0f0;padding:8px;text-align:left;border:1px solid #ccc;font-size:11px}td{padding:8px;border:1px solid #ddd}.total{font-weight:700;background:#f8f8f8}@media print{button{display:none}}</style></head><body>';
+        html+='<h2>📋 Relatório de Saídas</h2><div style="color:#555;margin-bottom:8px">Data: <b>'+hoje+'</b> · Total: <b>'+totalGeral+' unidades</b></div>';
+        html+='<table><tr><th>Medicamento</th><th>Categoria</th><th style="text-align:center">Quantidade</th></tr>';
+        lista.forEach(function(it){html+='<tr><td>'+it.nome+'</td><td>'+it.cat+'</td><td style="text-align:center;font-weight:700">'+it.total+'</td></tr>';});
+        html+='<tr class="total"><td colspan="2">TOTAL</td><td style="text-align:center">'+totalGeral+'</td></tr>';
+        html+='</table></body></html>';
+        var w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(function(){w.print();},400);}
+      }} className="bp">🖨️ Imprimir / Salvar PDF</button>
+    </div>);
+  })()}
+</div>}
 {sub==='mov'&&<div>
   <div className="card" style={{marginBottom:12,padding:14}}>
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
