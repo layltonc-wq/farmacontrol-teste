@@ -3253,6 +3253,8 @@ function TabPrevisao(props){
               {meds.map(function(m){
                 var p=calcularPrevisao(m);
                 var metodoLbl={estimado:'🎯 estimado',minimo:'📊 mínimo',media:'📉 média',tendencia:'📈 tendência'};
+                var _iA=null;atas.forEach(function(a){if(a.itens)a.itens.forEach(function(it){if(it.medicamentoId===m.id)_iA={ata:a,item:it};});});
+                var saldoAta=_iA?(_iA.item.qtdTeto-(_iA.item.pedidoAcumulado||0)):null;
                 var val=valorPedido(m);
                 var editado=ajustes[m.id]!==undefined;
                 return(<div key={m.id} style={{marginBottom:8,borderRadius:12,background:'#fff',border:'1px solid #E2E8F0',padding:'12px 14px'}}>
