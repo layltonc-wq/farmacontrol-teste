@@ -554,7 +554,7 @@ function save(){if(!sel){setErr('Selecione um medicamento.');return;}var q=parse
   }
   function _execSalvarCarrinhoNota(){
     setSalvandoNota(true);
-    var nfNum=loteNota.trim();var nfForn=obsNota.trim();
+    var nfNum=loteNota.trim();var nfData=valNota.trim();var nfForn=obsNota.trim();
     var obsTexto='NF'+(nfNum?' '+nfNum:'')+(nfForn?' - '+nfForn:'');
     var idx3=0;var items=carrinhoNota.slice();
     function next2(){
