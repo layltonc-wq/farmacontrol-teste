@@ -504,6 +504,7 @@ return(
     </div>
   )}
 </div>);}
+
 function TabEntrada(props){var user=props.user;var medications=props.medications;var onSave=props.onSave;var isGuest=props.isGuest||false;var canMove=props.canMove!==false;var confirm2=props.confirm2||function(t,m,fn){if(window.confirm(m))fn();};var alert2=props.alert2||function(m){window.alert(m);};var _modo=useState('individual');var modo=_modo[0];var setModo=_modo[1];var _search=useState('');var search=_search[0];var setSearch=_search[1];var _sel=useState(null);var sel=_sel[0];var setSel=_sel[1];var _newNome=useState('');var newNome=_newNome[0];var setNewNome=_newNome[1];var _newEan=useState('');var newEan=_newEan[0];var setNewEan=_newEan[1];var _creating=useState(false);var creating=_creating[0];var setCreating=_creating[1];var _showList=useState(false);var showList=_showList[0];var setShowList=_showList[1];var _qty=useState('');var qty=_qty[0];var setQty=_qty[1];var _lote=useState('');var lote=_lote[0];var setLote=_lote[1];var _val=useState('');var val=_val[0];var setVal=_val[1];var _obs=useState('');var obs=_obs[0];var setObs=_obs[1];var _err=useState('');var err=_err[0];var setErr=_err[1];var _ok=useState('');var ok=_ok[0];var setOk=_ok[1];var _saving=useState(false);var saving=_saving[0];var setSaving=_saving[1];var _filtEntrada=useState('todos');var filtEntrada=_filtEntrada[0];var setFiltEntrada=_filtEntrada[1];var _loteNota=useState('');var loteNota=_loteNota[0];var setLoteNota=_loteNota[1];var _valNota=useState('');var valNota=_valNota[0];var setValNota=_valNota[1];var _obsNota=useState('');var obsNota=_obsNota[0];var setObsNota=_obsNota[1];var _loteNotaReal=useState('');var loteNotaReal=_loteNotaReal[0];var setLoteNotaReal=_loteNotaReal[1];var _valNotaReal=useState('');var valNotaReal=_valNotaReal[0];var setValNotaReal=_valNotaReal[1];var _qtds=useState({});var qtds=_qtds[0];var setQtds=_qtds[1];var _salvandoNota=useState(false);var salvandoNota=_salvandoNota[0];var setSalvandoNota=_salvandoNota[1];
 var _showDiv=useState(false);var showDiv=_showDiv[0];var setShowDiv=_showDiv[1];
 var _divNotaMed=useState(null);var divNotaMed=_divNotaMed[0];var setDivNotaMed=_divNotaMed[1];
@@ -867,7 +868,39 @@ return(
       </button>}
     </div>
   )}
-</div>);}
+  {showDiv&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:9000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+    <div style={{background:'#fff',borderRadius:20,padding:20,maxWidth:500,width:'100%',maxHeight:'90vh',overflowY:'auto'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+        <div style={{fontWeight:800,fontSize:17,color:'#92400E'}}>⚠️ Registrar Divergência</div>
+        <button onClick={function(){setShowDiv(false);}} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:'#94A3B8'}}>✕</button>
+      </div>
+      <div style={{background:'#FEF2F2',borderRadius:12,padding:14,marginBottom:12}}>
+        <div style={{fontWeight:700,fontSize:13,color:'#DC2626',marginBottom:10}}>📄 O que está na NOTA</div>
+        <input value={divBuscaNota} onChange={function(e){setDivBuscaNota(e.target.value);setDivNotaMed(null);}} placeholder="Buscar medicamento da nota..." className="inp" style={{marginBottom:4,fontSize:13}}/>
+        {divBuscaNota.trim()&&!divNotaMed&&<div style={{maxHeight:100,overflowY:'auto',border:'1px solid #E2E8F0',borderRadius:8,background:'#fff',marginBottom:6}}>{medications.filter(function(m){return m.nome.toLowerCase().indexOf(divBuscaNota.toLowerCase())>=0;}).slice(0,6).map(function(m){return(<div key={m.id} onClick={function(){setDivNotaMed(m);setDivBuscaNota(m.nome);}} style={{padding:'8px 12px',fontSize:13,cursor:'pointer',borderBottom:'1px solid #F1F5F9'}}>{m.nome}</div>);})}</div>}
+        {divNotaMed&&<div style={{background:'#FEE2E2',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:12,color:'#DC2626',fontWeight:600}}>✓ {divNotaMed.nome}</div>}
+        <input type="number" value={divNotaQty} onChange={function(e){setDivNotaQty(e.target.value);}} placeholder="Quantidade na nota" className="inp" style={{marginBottom:0,fontSize:13}}/>
+      </div>
+      <div style={{background:'#F0FDF4',borderRadius:12,padding:14,marginBottom:12}}>
+        <div style={{fontWeight:700,fontSize:13,color:'#0C6B3E',marginBottom:10}}>📦 O que chegou de VERDADE</div>
+        <input value={divBusca} onChange={function(e){setDivBusca(e.target.value);setDivRealMed(null);}} placeholder="Buscar medicamento recebido..." className="inp" style={{marginBottom:4,fontSize:13}}/>
+        {divBusca.trim()&&!divRealMed&&<div style={{maxHeight:100,overflowY:'auto',border:'1px solid #E2E8F0',borderRadius:8,background:'#fff',marginBottom:6}}>{medications.filter(function(m){return m.nome.toLowerCase().indexOf(divBusca.toLowerCase())>=0;}).slice(0,6).map(function(m){return(<div key={m.id} onClick={function(){setDivRealMed(m);setDivBusca(m.nome);}} style={{padding:'8px 12px',fontSize:13,cursor:'pointer',borderBottom:'1px solid #F1F5F9'}}>{m.nome}</div>);})}</div>}
+        {divRealMed&&<div style={{background:'#DCFCE7',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:12,color:'#0C6B3E',fontWeight:600}}>✓ {divRealMed.nome}</div>}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+          <div><div style={{fontSize:11,color:'#64748B',marginBottom:3}}>Qtd</div><input type="number" value={divRealQty} onChange={function(e){setDivRealQty(e.target.value);}} placeholder="Qtd" className="inp" style={{marginBottom:0,fontSize:13}}/></div>
+          <div><div style={{fontSize:11,color:'#64748B',marginBottom:3}}>Lote</div><input value={divRealLote} onChange={function(e){setDivRealLote(e.target.value);}} placeholder="Lote" className="inp" style={{marginBottom:0,fontSize:13}}/></div>
+          <div><div style={{fontSize:11,color:'#64748B',marginBottom:3}}>Val.</div><input value={divRealVal} onChange={function(e){setDivRealVal(e.target.value);}} placeholder="MM/AAAA" className="inp" style={{marginBottom:0,fontSize:13}}/></div>
+        </div>
+      </div>
+      <input value={divMotivo} onChange={function(e){setDivMotivo(e.target.value);}} placeholder="Motivo / observação (opcional)" className="inp" style={{marginBottom:14,fontSize:13}}/>
+      {salvandoDiv&&<div style={{textAlign:'center',color:'#1351B4',fontWeight:600,marginBottom:8}}>⏳ Registrando...</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={function(){setShowDiv(false);}} className="bs" style={{flex:1,padding:'12px 0'}}>Cancelar</button>
+        <button onClick={salvarDivergencia} disabled={salvandoDiv} style={{flex:2,padding:'12px 0',background:'#D97706',color:'#fff',border:'none',borderRadius:12,fontWeight:700,fontSize:14,cursor:'pointer'}}>⚠️ Registrar Divergência</button>
+      </div>
+    </div>
+  </div>}
+  </div>);}
 
 function HistModal(props){
   var med=props.med;var entries=props.entries;var onClose=props.onClose;var user=props.user;
@@ -4193,57 +4226,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
 </script>
 </body>
 </html>
-  {showDiv&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:9000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
-    <div style={{background:'#fff',borderRadius:20,padding:20,maxWidth:500,width:'100%',maxHeight:'90vh',overflowY:'auto'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-        <div style={{fontWeight:800,fontSize:17,color:'#92400E'}}>⚠️ Registrar Divergência</div>
-        <button onClick={function(){setShowDiv(false);}} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:'#94A3B8'}}>✕</button>
-      </div>
-
-      {/* O que estava na NOTA */}
-      <div style={{background:'#FEF2F2',borderRadius:12,padding:14,marginBottom:12}}>
-        <div style={{fontWeight:700,fontSize:13,color:'#DC2626',marginBottom:10}}>📄 O que está na NOTA</div>
-        <div style={{fontSize:11,color:'#64748B',marginBottom:4}}>Buscar medicamento da nota:</div>
-        <input value={divBuscaNota} onChange={function(e){setDivBuscaNota(e.target.value);setDivNotaMed(null);}} placeholder="Digite o nome..." className="inp" style={{marginBottom:4,fontSize:13}}/>
-        {divBuscaNota.trim()&&!divNotaMed&&<div style={{maxHeight:100,overflowY:'auto',border:'1px solid #E2E8F0',borderRadius:8,background:'#fff',marginBottom:6}}>
-          {medications.filter(function(m){return m.nome.toLowerCase().indexOf(divBuscaNota.toLowerCase())>=0;}).slice(0,6).map(function(m){
-            return(<div key={m.id} onClick={function(){setDivNotaMed(m);setDivBuscaNota(m.nome);}} style={{padding:'8px 12px',fontSize:13,cursor:'pointer',borderBottom:'1px solid #F1F5F9'}}>{m.nome}</div>);
-          })}
-        </div>}
-        {divNotaMed&&<div style={{background:'#FEE2E2',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:12,color:'#DC2626',fontWeight:600}}>✓ {divNotaMed.nome}</div>}
-        <div style={{fontSize:11,color:'#64748B',marginBottom:4}}>Quantidade na nota:</div>
-        <input type="number" value={divNotaQty} onChange={function(e){setDivNotaQty(e.target.value);}} placeholder="Qtd" className="inp" style={{marginBottom:0,fontSize:13}}/>
-      </div>
-
-      {/* O que chegou de VERDADE */}
-      <div style={{background:'#F0FDF4',borderRadius:12,padding:14,marginBottom:12}}>
-        <div style={{fontWeight:700,fontSize:13,color:'#0C6B3E',marginBottom:10}}>📦 O que chegou de VERDADE</div>
-        <div style={{fontSize:11,color:'#64748B',marginBottom:4}}>Buscar medicamento recebido:</div>
-        <input value={divBusca} onChange={function(e){setDivBusca(e.target.value);setDivRealMed(null);}} placeholder="Digite o nome..." className="inp" style={{marginBottom:4,fontSize:13}}/>
-        {divBusca.trim()&&!divRealMed&&<div style={{maxHeight:100,overflowY:'auto',border:'1px solid #E2E8F0',borderRadius:8,background:'#fff',marginBottom:6}}>
-          {medications.filter(function(m){return m.nome.toLowerCase().indexOf(divBusca.toLowerCase())>=0;}).slice(0,6).map(function(m){
-            return(<div key={m.id} onClick={function(){setDivRealMed(m);setDivBusca(m.nome);}} style={{padding:'8px 12px',fontSize:13,cursor:'pointer',borderBottom:'1px solid #F1F5F9'}}>{m.nome}</div>);
-          })}
-        </div>}
-        {divRealMed&&<div style={{background:'#DCFCE7',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:12,color:'#0C6B3E',fontWeight:600}}>✓ {divRealMed.nome}</div>}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
-          <div><div style={{fontSize:11,color:'#64748B',marginBottom:3}}>Quantidade</div><input type="number" value={divRealQty} onChange={function(e){setDivRealQty(e.target.value);}} placeholder="Qtd" className="inp" style={{marginBottom:0,fontSize:13}}/></div>
-          <div><div style={{fontSize:11,color:'#64748B',marginBottom:3}}>Lote</div><input value={divRealLote} onChange={function(e){setDivRealLote(e.target.value);}} placeholder="Lote" className="inp" style={{marginBottom:0,fontSize:13}}/></div>
-          <div><div style={{fontSize:11,color:'#64748B',marginBottom:3}}>Validade</div><input value={divRealVal} onChange={function(e){setDivRealVal(e.target.value);}} placeholder="MM/AAAA" className="inp" style={{marginBottom:0,fontSize:13}}/></div>
-        </div>
-      </div>
-
-      {/* Motivo */}
-      <div style={{marginBottom:14}}>
-        <div style={{fontSize:11,color:'#64748B',marginBottom:4}}>Motivo / observação (opcional):</div>
-        <input value={divMotivo} onChange={function(e){setDivMotivo(e.target.value);}} placeholder="Ex: Fornecedor substituiu sem aviso..." className="inp" style={{marginBottom:0,fontSize:13}}/>
-      </div>
-
-      {salvandoDiv&&<div style={{textAlign:'center',color:'#1351B4',fontWeight:600,marginBottom:8}}>⏳ Registrando...</div>}
-      <div style={{display:'flex',gap:8}}>
-        <button onClick={function(){setShowDiv(false);}} className="bs" style={{flex:1,padding:'12px 0'}}>Cancelar</button>
-        <button onClick={salvarDivergencia} disabled={salvandoDiv} className="bg" style={{flex:2,padding:'12px 0',background:'#D97706'}}>⚠️ Registrar Divergência</button>
-      </div>
-    </div>
-  </div>}
-
